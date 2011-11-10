@@ -11,17 +11,20 @@ static void print_names(int n, xmlNode *node)
 
 	for (cur = node; cur; cur = cur->next)
 	{
-		printf("%d: %s: %s\n", n, cur->name, cur->content);
+		if (cur->type == XML_ELEMENT_NODE)
+		{
+			for (int i = 0; i < n; i++)
+				printf("\t");
+			printf("%s\n", cur->name);
+		}
+		else
+			continue;
 		prop = cur->properties;
 		while (prop)
 		{
-			printf("%s\n", prop->name);
-			if (prop->children)
-			{
-				printf("%d\n", prop->children->type);
-				printf("%s\n", prop->children->content);
-				printf("%p\n", prop->children->next);
-			}
+			for (int i = 0; i < n; i++)
+				printf("\t");
+			printf("%s: %s\n", prop->name, xmlGetProp(cur, prop->name));
 			prop = prop->next;
 		}
 

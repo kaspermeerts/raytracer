@@ -24,7 +24,7 @@ static void print_names(int n, xmlNode *node)
 		{
 			for (int i = 0; i < n; i++)
 				printf("\t");
-			printf("%s: %s\n", prop->name, xmlGetProp(cur, prop->name));
+			printf(">%s: %s\n", prop->name, xmlGetProp(cur, prop->name));
 			prop = prop->next;
 		}
 

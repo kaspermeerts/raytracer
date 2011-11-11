@@ -20,5 +20,12 @@
    
    <Scene camera="cam0" lights="light0" background="0.3 0.3 0.3">
       <Shape geometry="cyl0" material="dif0" />
+	  <Rotate axis="1 1 1" angle="10">
+	     <Shape geometry="cyl0" />
+	     <Shape geometry="cyl0" />
+	     <Shape geometry="cyl0" />
+	     <Shape geometry="cyl0" />
+	  </Rotate>
+	
    </Scene>
 </Sdl>

@@ -20,11 +20,12 @@ typedef struct Camera {
 } Camera;
 
 typedef struct Light {
-	enum { DIRECTIONAL, POINT, SPOT } type;
+	enum { LIGHT_DIRECTIONAL, LIGHT_POINT, LIGHT_SPOT } type;
 	Vec3 position;
 	Vec3 direction; /* Keep this normalized */
 	float angle;
 	Colour colour;
+	float intensity;
 	char *name;
 } Light;
 
@@ -41,6 +42,10 @@ typedef struct Material {
 	int shininess;
 } Material;
 
+typedef struct Shape {
+	Sphere sphere;
+} Shape;
+
 typedef struct Scene {
 	Camera cam;
 	int num_lights;
@@ -52,5 +57,22 @@ typedef struct Scene {
 typedef struct Node {
 	enum { SHAPE, TRANSFORM } type;
 } Node;
+
+typedef struct Sdl {
+	int num_cameras;
+	Camera *camera;
+	int num_lights;
+	Light *light;
+	int num_shapes;
+	Shape *shape;
+	int num_textures;
+	Texture *texture;
+	int num_materials;
+	Material *material;
+
+	Scene *scene;
+} Sdl;
+
+Sdl *sdl_load(const char *filename);
 
 #endif

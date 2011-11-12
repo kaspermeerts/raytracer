@@ -1,16 +1,16 @@
 CC = gcc
-DEFINES = -DNDEBUG
-WARNINGS = -Wextra -Wall -Wwrite-strings -Wshadow -Wpointer-arith -Wcast-qual -Wstrict-prototypes -Wmissing-prototypes -Wstrict-aliasing -pedantic
-CFLAGS = $(WARNING) $(DEFINES) -std=c99 -pipe -ggdb
+DEFINES =
+WARNINGS = -Wextra -Wall -Wwrite-strings -Wshadow -Wpointer-arith -Wcast-qual -Wstrict-prototypes -Wmissing-prototypes -Wstrict-aliasing -Wno-pointer-sign -pedantic
+CFLAGS = $(WARNINGS) $(DEFINES) -std=c99 -O2 -pipe -ggdb
 SOURCES = colour.c glm.c matrix.c quaternion.c vector.c ray.c scene.c
 INCFLAGS =
 LDFLAGS = -lm
 
-all: sdltest xmltest
+all: raytracer sdltest xmltest
 
 raytracer: raytracer.c $(SOURCES)
 	@echo "	CC raytracer"
-	@$(CC) -o raytracer raytracer.c $(CFLAGS) $(LDFLAGS) $(INCFLAGS) $(SOURCES)
+	@$(CC) -o raytracer raytracer.c $(CFLAGS) `xml2-config --cflags` $(LDFLAGS) `xml2-config --libs` $(INCFLAGS) $(SOURCES)
 
 sdltest: sdltest.c $(SOURCES)
 	@echo "	CC sdltest"

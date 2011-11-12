@@ -6,11 +6,6 @@
 
 enum { MAX_LIGHTS=8 };
 
-typedef struct Sphere {
-	Vec3 center;
-	float radius;
-} Sphere;
-
 typedef struct Camera {
 	Vec3 position;
 	Vec3 direction; /* Keep this normalized */
@@ -37,26 +32,57 @@ typedef struct Texture {
 } Texture;
 
 typedef struct Material {
-	enum { DIFFUSE, PHONG, COMBINED } type;
+	enum { MATERIAL_DIFFUSE, MATERIAL_PHONG, MATERIAL_COMBINED } type;
 	Colour colour;
 	int shininess;
+	char *name;
 } Material;
 
+typedef struct Sphere {
+	float radius;
+} Sphere;
+
+typedef struct Cylinder {
+	float radius;
+	float height;
+	bool capped;
+} Cylinder;
+
+typedef struct Cone {
+	float radius;
+	float height;
+	bool capped;
+} Cone;
+
+typedef struct Torus {
+	float inner_radius;
+	float outer_radius;
+} Torus;
+
 typedef struct Shape {
-	Sphere sphere;
+	enum { SHAPE_SPHERE, SHAPE_CYLINDER, SHAPE_CONE, SHAPE_TORUS, SHAPE_MESH }
+			type;
+	union {
+		Sphere sphere;
+		Cylinder cylinder;
+		Cone cone;
+		Torus torus;
+	} u;
+	char *name;
 } Shape;
 
-typedef struct Scene {
-	Camera cam;
-	int num_lights;
-	Light light[MAX_LIGHTS]; /* XXX */
-	Colour background;
-	struct Node *graph;
-} Scene;
-
 typedef struct Node {
-	enum { SHAPE, TRANSFORM } type;
+	enum { SHAPE } type;
+	Shape *shape;
 } Node;
+
+typedef struct Scene {
+	Camera *camera;
+	int num_lights;
+	Light *light[MAX_LIGHTS]; /* XXX */
+	Colour background;
+	struct Node graph; /* One node? */
+} Scene;
 
 typedef struct Sdl {
 	int num_cameras;
@@ -70,7 +96,7 @@ typedef struct Sdl {
 	int num_materials;
 	Material *material;
 
-	Scene *scene;
+	Scene scene;
 } Sdl;
 
 Sdl *sdl_load(const char *filename);

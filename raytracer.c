@@ -11,16 +11,20 @@
 const int WIDTH = 1000;
 const int HEIGHT = 1000;
 
-Sphere spheres[2] = {
-{{0.0, 0.0, 0.0}, 1.0 },
-{{2.0, 2.0, -1.0}, 2.0 }
-};
+Sdl *sdl;
 
-int main(void)
+int main(int argc, char **argv)
 {
-	Vec3 camera = (Vec3){0.0, 0.0, 5.0};
+	Vec3 camera = (Vec3){0.0, 5.0, 1.0};
 	FILE *out;
 	Colour *buffer;
+
+	if (argc < 2)
+		return 1;
+
+	sdl = sdl_load(argv[1]);
+	if (sdl == NULL)
+		return 1;
 
 	buffer = calloc(WIDTH*HEIGHT, sizeof(Colour));
 
@@ -30,12 +34,12 @@ int main(void)
 		{
 			Colour *c = &buffer[WIDTH*j + i];
 			Vec3 d;
-			float x, y, z, t1, t2;
+			float x, y, z, t1;
 			Ray r;
 
 			x = -5 + 10.0 * i/(float) WIDTH;
-			y = -5 + 10.0 * j/(float) HEIGHT;
-			z = 3;
+			y = 3;
+			z = -5 + 10.0 * j/(float) HEIGHT;
 
 			d.x = x;
 			d.y = y;
@@ -44,24 +48,14 @@ int main(void)
 			r.origin = camera;
 			r.direction = vec3_normalize(vec3_sub(d, camera));
 
-#if 1
+#if 0
 			r.origin = d;
 			r.direction = (Vec3) {0, 0, -1};
 #endif
-			t1 = ray_sphere_intersect(r, spheres[0]);
-			t2 = ray_sphere_intersect(r, spheres[1]);
+			t1 = ray_cylinder_intersect(r, sdl->scene.graph.shape->u.cylinder.height, sdl->scene.graph.shape->u.cylinder.radius);
 
-			if (t1 > 0 && (t1 < t2 || t2 < 0))
-			{
-				c->r = 255;
-				c->g = 0;
-				c->b = 0;
-			} else if (t2 > 0)
-			{
-				c->r = 0;
-				c->g = 255;
-				c->b = 0;
-			}
+			if (t1 > 0)
+				c->r = c->g = c->b = 1;
 			else
 				c->r = c->g = c->b = 0;
 		}

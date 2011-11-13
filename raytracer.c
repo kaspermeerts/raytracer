@@ -8,8 +8,8 @@
 #include "ray.h"
 
 /* TODO: Put in config structure */
-const int WIDTH = 500;
-const int HEIGHT = 500;
+const int WIDTH = 512;
+const int HEIGHT = 512;
 
 int main(int argc, char **argv)
 {
@@ -33,21 +33,21 @@ int main(int argc, char **argv)
 	{
 		Camera *cam = scene->camera;
 		Colour *c = &buffer[WIDTH*j + i];
-		Surface *surf;
+		Hit hit;
 		Ray r;
-		bool hit;
+		bool hit_surface;
 
 		/* Step 1: Ray generating */
 		r = camera_ray(cam, WIDTH, HEIGHT, i, j, 1);
 
 		/* Step 2: Ray tracing */
-		hit = ray_intersect(r, &sdl->scene, &surf);
+		hit_surface = ray_intersect(r, &sdl->scene, &hit);
 
 		/* Step 3: Shading */
-		if (hit)
-			*c = surf->material->colour;
+		if (hit_surface)
+			*c = hit.surface->material->colour;
 		else
-			c->r = c->g = c->b = 0;
+			*c = scene->background;
 	}
 
 	out = fopen("test.ppm", "w");

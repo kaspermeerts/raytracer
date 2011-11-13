@@ -6,7 +6,7 @@ SOURCES = colour.c glm.c matrix.c quaternion.c vector.c ray.c scene.c
 INCFLAGS =
 LDFLAGS = -lm
 
-all: raytracer sdltest xmltest
+all: raytracer sdltest
 
 raytracer: raytracer.c $(SOURCES)
 	@echo "	CC raytracer"
@@ -15,10 +15,6 @@ raytracer: raytracer.c $(SOURCES)
 sdltest: sdltest.c $(SOURCES)
 	@echo "	CC sdltest"
 	@$(CC) -o sdltest sdltest.c $(CFLAGS) `xml2-config --cflags` $(LDFLAGS) `xml2-config --libs` $(INCFLAGS) $(SOURCES)
-
-xmltest: xmltest.c
-	@echo "	CC xmltest"
-	@$(CC) -o xmltest xmltest.c $(CFLAGS) `xml2-config --cflags` $(LDFLAGS) `xml2-config --libs` $(INCFLAGS) $(SOURCES)
 
 ctags:
 	@echo "	CTAGS"

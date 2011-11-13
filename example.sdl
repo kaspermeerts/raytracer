@@ -3,23 +3,23 @@
 
 <Sdl>
    <Cameras>
-      <Camera position="4 0 0.5" direction="-1 0 0" up="0 0 1" fovy="17" name="cam0" /> 
-   </Cameras>   
-   
+      <Camera position="5 5 5" direction="-1 -1 -1" up="0 0 1" fovy="45" name="cam0" />
+   </Cameras>
+
    <Lights>
       <PointLight position="0 2 0" intensity="1" color="1 1 1" name="light0" />
    </Lights>
-   
+
    <Geometry>
-	   <Cylinder radius="0.5" height="1" capped="true" name="cyl0" />
-	   <Sphere radius="0.5" name="sph0" />
+	   <Cylinder radius="1" height="1" capped="true" name="cyl0" />
+	   <Sphere radius="1" name="sph0" />
    </Geometry>
-   
+
    <Materials>
-      <DiffuseMaterial color="0.75 0.75 1" name="dif0" />      
+      <DiffuseMaterial color="0.75 0.75 1" name="dif0" />
    </Materials>
-   
+
    <Scene camera="cam0" lights="light0" background="0.3 0.3 0.3">
-      <Shape geometry="sph0" material="dif0" />
+      <Shape geometry="cyl0" material="dif0" />
    </Scene>
 </Sdl>

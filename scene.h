@@ -8,7 +8,7 @@ enum { MAX_LIGHTS=8 };
 
 typedef struct Camera {
 	Vec3 position;
-	Vec3 direction; /* Keep this normalized */
+	Vec3 direction;
 	Vec3 up;
 	Vec3 u, v, w;
 	float fov;
@@ -18,7 +18,7 @@ typedef struct Camera {
 typedef struct Light {
 	enum { LIGHT_DIRECTIONAL, LIGHT_POINT, LIGHT_SPOT } type;
 	Vec3 position;
-	Vec3 direction; /* Keep this normalized */
+	Vec3 direction; /* Not necessarily normalized */
 	float angle;
 	Colour colour;
 	float intensity;
@@ -89,12 +89,13 @@ typedef struct Node {
 typedef struct Scene {
 	Camera *camera;
 	int num_lights;
-	Light *light[MAX_LIGHTS]; /* XXX */
+	Light *light[MAX_LIGHTS];
 	Colour background;
 	struct Node graph; /* One node? */
 } Scene;
 
 typedef struct Sdl {
+	/* Resources */
 	int num_cameras;
 	Camera *camera;
 	int num_lights;

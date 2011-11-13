@@ -6,11 +6,15 @@
 
 typedef struct Ray {
 	Vec3 origin;
-	Vec3 direction; /* Make sure this is normalized! */
+	Vec3 direction; /* Not necessarily normalized */
 } Ray;
 
+typedef struct Hit {
+	Surface *surface;
+	Vec3 normal;
+	float t; /* Parameter of the ray equation: v = o + t*d */
+} Hit;
+
 Ray camera_ray(Camera *cam, int nx, int ny, int i, int j, double near);
-float ray_sphere_intersect(Ray r, Vec3 c, float radius);
-float ray_cylinder_intersect(Ray r, float height, float radius);
-bool ray_intersect(Ray ray, Scene *scene, Surface **surface);
+bool ray_intersect(Ray ray, Scene *scene, Hit *hit);
 #endif

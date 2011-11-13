@@ -23,6 +23,7 @@ bool write_image(Colour *buffer, int width, int height, FILE *fd)
 		if (buffer[i].b > max)
 			max = buffer[i].b;
 	}
+	max = 1;
 	max /= 255;
 	for (j = 0; j < height; j++)
 	{

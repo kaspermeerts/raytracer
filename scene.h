@@ -10,6 +10,7 @@ typedef struct Camera {
 	Vec3 position;
 	Vec3 direction; /* Keep this normalized */
 	Vec3 up;
+	Vec3 u, v, w;
 	float fov;
 	char *name;
 } Camera;
@@ -71,9 +72,18 @@ typedef struct Shape {
 	char *name;
 } Shape;
 
-typedef struct Node {
-	enum { SHAPE } type;
+typedef struct Surface {
 	Shape *shape;
+	Material *material;
+	Vec3 position;
+	Quaternion orientation;
+} Surface;
+
+typedef struct Node {
+	enum { NODE_SURFACE } type;
+	union {
+		Surface surface;
+	} u;
 } Node;
 
 typedef struct Scene {

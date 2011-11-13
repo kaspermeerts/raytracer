@@ -3,7 +3,7 @@
 
 <Sdl>
    <Cameras>
-      <Camera position="0 0 4" direction="0 0 -1" up="0 1 0" fovy="60" name="cam0" /> 
+      <Camera position="4 0 0.5" direction="-1 0 0" up="0 0 1" fovy="17" name="cam0" /> 
    </Cameras>   
    
    <Lights>
@@ -12,6 +12,7 @@
    
    <Geometry>
 	   <Cylinder radius="0.5" height="1" capped="true" name="cyl0" />
+	   <Sphere radius="0.5" name="sph0" />
    </Geometry>
    
    <Materials>
@@ -19,6 +20,6 @@
    </Materials>
    
    <Scene camera="cam0" lights="light0" background="0.3 0.3 0.3">
-      <Shape geometry="cyl0" material="dif0" />
+      <Shape geometry="sph0" material="dif0" />
    </Scene>
 </Sdl>

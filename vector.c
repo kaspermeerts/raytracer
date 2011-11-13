@@ -32,7 +32,7 @@ double vec3_length(Vec3 a)
 	return sqrt(vec3_dot(a, a));
 }
 
-Vec3 vec3_scale(Vec3 a, double scale)
+Vec3 vec3_scale(double scale, Vec3 a)
 {
 	Vec3 b;
 	b.x = a.x * scale;
@@ -44,7 +44,7 @@ Vec3 vec3_scale(Vec3 a, double scale)
 
 Vec3 vec3_normalize(Vec3 a)
 {
-	return vec3_scale(a, 1/vec3_length(a));
+	return vec3_scale(1/vec3_length(a), a);
 }
 
 Vec3 vec3_cross(Vec3 a, Vec3 b)
@@ -61,8 +61,8 @@ Vec3 vec3_lerp(Vec3 a, Vec3 b, double t)
 {
 	Vec3 c;
 	/* c = a*t + b*(1-t) */
-	a = vec3_scale(a, t);
-	b = vec3_scale(b, 1-t);
+	a = vec3_scale(t,     a);
+	b = vec3_scale(1 - t, b);
 	c = vec3_add(a, b);
 
 	return c;

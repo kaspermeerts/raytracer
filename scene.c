@@ -81,6 +81,10 @@ static bool import_cameras(Sdl *sdl, xmlNode *node, int n)
 		cam->up = parse_vec3(xmlGetProp(cur_node, "up"));
 		cam->fov = parse_double(xmlGetProp(cur_node, "fovy"));
 		cam->name = strdup(xmlGetProp(cur_node, "name"));
+
+		cam->w = vec3_scale(-1, vec3_normalize(cam->direction));
+		cam->u = vec3_normalize(vec3_cross(cam->up, cam->w));
+		cam->v = vec3_cross(cam->w, cam->u);
 	}
 	assert(i == n);
 
@@ -230,6 +234,7 @@ static bool import_materials(Sdl *sdl, xmlNode *node, int n)
 			printf("Unimplemented material type: %s\n", cur_node->name);
 			return false;
 		}
+		mat->name = strdup(xmlGetProp(cur_node, "name"));
 	}
 
 	return true;
@@ -302,18 +307,29 @@ static bool import_scene(Sdl *sdl, xmlNode *node, int n)
 	xmlNode *shape_node = xmlFirstElementChild(node);
 	assert(strcmp(shape_node->name, "Shape") == 0);
 	const char *shape_name = xmlGetProp(shape_node, "geometry");
-	scene->graph.shape = NULL;
+	scene->graph.u.surface.shape = NULL;
 	for (i = 0; i < sdl->num_shapes; i++)
 	{
 		if (strcmp(sdl->shape[i].name, shape_name) == 0)
-			scene->graph.shape = &sdl->shape[i];
+			scene->graph.u.surface.shape = &sdl->shape[i];
 	}
-	if (scene->graph.shape == NULL)
+	if (scene->graph.u.surface.shape == NULL)
 	{
 		printf("Requested shape \"%s\" not found\n", shape_name);
 		return false;
 	}
-	assert(xmlHasProp(shape_node, "material"));
+	const char *mat_name = xmlGetProp(shape_node, "material");
+	scene->graph.u.surface.material = NULL;
+	for (i = 0; i < sdl->num_materials; i++)
+	{
+		if (strcmp(sdl->material[i].name, mat_name) == 0)
+			scene->graph.u.surface.material = &sdl->material[i];
+	}
+	if (scene->graph.u.surface.material == NULL)
+	{
+		printf("Requested material \"%s\" not found\n", mat_name);
+		return false;
+	}
 
 	return true;
 }

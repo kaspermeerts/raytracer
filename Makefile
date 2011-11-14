@@ -2,7 +2,7 @@ CC = gcc
 DEFINES =
 WARNINGS = -Wextra -Wall -Wwrite-strings -Wshadow -Wpointer-arith -Wcast-qual -Wstrict-prototypes -Wmissing-prototypes -Wstrict-aliasing -Wno-pointer-sign -pedantic
 CFLAGS = $(WARNINGS) $(DEFINES) -std=c99  -pipe -ggdb
-SOURCES = colour.c glm.c matrix.c quaternion.c vector.c ray.c scene.c
+SOURCES = colour.c vector.c ray.c scene.c
 INCFLAGS =
 LDFLAGS = -lm
 

@@ -8,5 +8,8 @@ typedef struct Colour {
 	float r, g, b, a;
 } Colour;
 
+Colour colour_add(Colour a, Colour b);
+Colour colour_scale(float s, Colour a);
+Colour colour_mul(Colour a, Colour b);
 bool write_image(Colour *buffer, int width, int height, FILE *fd);
 #endif

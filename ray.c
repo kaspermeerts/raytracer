@@ -25,7 +25,7 @@ Ray camera_ray(Camera *cam, int nx, int ny, int i, int j, double near)
 	return r;
 }
 
-static float ray_sphere_intersect(Ray r, Sphere sph)
+static bool ray_sphere_intersect(Ray r, Sphere sph, float *t)
 {
 	Vec3 v;
 	float dd, vd, vv, discriminant, t1, t2;
@@ -38,12 +38,13 @@ static float ray_sphere_intersect(Ray r, Sphere sph)
 
 	discriminant = vd*vd - dd*(vv - radius*radius);
 	if (discriminant < 0)
-		return -HUGE_VAL; /* XXX */
+		return false;
 
 	t1 = (-vd + sqrt(discriminant))/dd;
 	t2 = (-vd - sqrt(discriminant))/dd;
 
-	return MIN(t1, t2);
+	*t = t2;
+	return true;
 }
 
 static float ray_cylinder_intersect(Ray ray, Cylinder cyl)
@@ -72,27 +73,28 @@ static float ray_cylinder_intersect(Ray ray, Cylinder cyl)
 
 bool ray_intersect(Ray ray, Scene *scene, Hit *hit)
 {
+	float t;
 	Node *hit_node = &scene->graph;
 	Surface *surf = &hit_node->u.surface; /* Necessarily a surface node */
+
 	assert(hit_node->type == NODE_SURFACE);
-	float t;
+
+	hit->surface = surf;
 	switch(surf->shape->type)
 	{
 	case SHAPE_CYLINDER:
 		t = ray_cylinder_intersect(ray, surf->shape->u.cylinder);
 		if (t > 0)
 		{
-			hit->surface = surf;
 			hit->t = t;
 			return true;
 		}
 		break;
 	case SHAPE_SPHERE:
-		t = ray_sphere_intersect(ray, surf->shape->u.sphere);
-		if (t > 0)
+		if (ray_sphere_intersect(ray, surf->shape->u.sphere, &hit->t))
 		{
-			hit->surface = surf;
-			hit->t = t;
+			hit->position = vec3_add(ray.origin, vec3_scale(hit->t, ray.direction));
+			hit->normal = vec3_normalize(hit->position);
 			return true;
 		}
 		break;

@@ -283,6 +283,7 @@ static bool import_scene(Sdl *sdl, xmlNode *node, int n)
 		printf("Only one light for now\n");
 		return false;
 	}
+	scene->num_lights = 1;
 	scene->light[0] = NULL;
 	for (i = 0; i < sdl->num_lights; i++)
 	{

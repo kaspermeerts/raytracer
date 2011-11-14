@@ -11,6 +11,7 @@ typedef struct Ray {
 
 typedef struct Hit {
 	Surface *surface;
+	Vec3 position;
 	Vec3 normal;
 	float t; /* Parameter of the ray equation: v = o + t*d */
 } Hit;

@@ -76,7 +76,7 @@ typedef struct Surface {
 	Shape *shape;
 	Material *material;
 	Vec3 position;
-	Quaternion orientation;
+	//Quaternion orientation;
 } Surface;
 
 typedef struct Node {

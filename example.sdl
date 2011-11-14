@@ -7,7 +7,7 @@
    </Cameras>
 
    <Lights>
-      <PointLight position="0 2 0" intensity="1" color="1 1 1" name="light0" />
+      <PointLight position="5 -5 5" intensity="1" color="1 1 1" name="light0" />
    </Lights>
 
    <Geometry>
@@ -20,6 +20,6 @@
    </Materials>
 
    <Scene camera="cam0" lights="light0" background="0.3 0.3 0.3">
-      <Shape geometry="cyl0" material="dif0" />
+      <Shape geometry="sph0" material="dif0" />
    </Scene>
 </Sdl>

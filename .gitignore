@@ -1,3 +1,5 @@
+lex.yy.c
+lex.yy.h
 *ppm
 xmltest
 raytracer

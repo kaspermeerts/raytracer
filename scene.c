@@ -231,8 +231,33 @@ static bool import_materials(Sdl *sdl, xmlNode *node, int n)
 			mat->shininess = parse_double(xmlGetProp(cur_node, "shininess"));
 		} else
 		{
-			printf("Unimplemented material type: %s\n", cur_node->name);
-			return false;
+			const char *mat1_name, *mat2_name;
+			int j;
+			mat->type = MATERIAL_COMBINED;
+			mat->weight1 = parse_double(xmlGetProp(cur_node, "weight1"));
+			mat->weight2 = parse_double(xmlGetProp(cur_node, "weight2"));
+			mat1_name = xmlGetProp(cur_node, "material1");
+			mat2_name = xmlGetProp(cur_node, "material2");
+			mat->mat1 = mat->mat2 = NULL;
+			for (j = 0; j < i; j++)
+			{
+				if (strcmp(mat1_name, sdl->material[j].name) == 0)
+					mat->mat1 = &sdl->material[j];
+				if (strcmp(mat2_name, sdl->material[j].name) == 0)
+					mat->mat2 = &sdl->material[j];
+			}
+			if (mat->mat1 == NULL)
+			{
+				printf("Couln't find requested material \"%s\"\n",
+					mat1_name);
+				return false;
+			}
+			if (mat->mat2 == NULL)
+			{
+				printf("Couln't find requested material \"%s\"\n",
+					mat2_name);
+				return false;
+			}
 		}
 		mat->name = strdup(xmlGetProp(cur_node, "name"));
 	}

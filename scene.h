@@ -36,6 +36,10 @@ typedef struct Material {
 	enum { MATERIAL_DIFFUSE, MATERIAL_PHONG, MATERIAL_COMBINED } type;
 	Colour colour;
 	int shininess;
+	float weight1;
+	struct Material *mat1;
+	float weight2;
+	struct Material *mat2;
 	char *name;
 } Material;
 

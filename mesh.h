@@ -4,6 +4,15 @@
 #include <stdbool.h>
 #include "cgmath.h"
 
+typedef struct Triangle {
+	struct {
+		int vertex_index;
+		int normal_index;
+		int texcoord_index;
+	} vertex[3];
+	Vec3 normal;
+} Triangle;
+
 typedef struct TexCoord {
 	float u, v;
 } TexCoord;
@@ -14,11 +23,13 @@ typedef struct Mesh {
 	bool has_normals, has_texcoords;
 	int num_vertices;
 	Vec3 *vertex;
+	int num_normals;
 	Vec3 *normal;
+	int num_texcoords;
 	TexCoord *texcoord;
 
-	int num_indices;
-	int *index; /* Shorts? */
+	int num_triangles;
+	Triangle *triangle;
 } Mesh;
 
 #endif

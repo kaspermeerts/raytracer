@@ -10,7 +10,6 @@ typedef struct Triangle {
 		int normal_index;
 		int texcoord_index;
 	} vertex[3];
-	Vec3 normal;
 } Triangle;
 
 typedef struct TexCoord {
@@ -31,5 +30,7 @@ typedef struct Mesh {
 	int num_triangles;
 	Triangle *triangle;
 } Mesh;
+
+Mesh *mesh_load(const char *filename);
 
 #endif

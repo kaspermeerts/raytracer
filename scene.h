@@ -72,6 +72,7 @@ typedef struct Shape {
 		Cylinder cylinder;
 		Cone cone;
 		Torus torus;
+		Mesh *mesh;
 	} u;
 	char *name;
 } Shape;

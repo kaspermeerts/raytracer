@@ -11,8 +11,8 @@
 #include "ray.h"
 
 /* TODO: Put in config structure */
-const int WIDTH = 1024;
-const int HEIGHT = 1024;
+const int WIDTH = 256;
+const int HEIGHT = 256;
 
 static Colour diffuse_light(int n, Light **lights, Vec3 cam_pos,
 		Vec3 hit_pos, Vec3 normal)
@@ -25,10 +25,10 @@ static Colour diffuse_light(int n, Light **lights, Vec3 cam_pos,
 	{
 		float ndotl;
 		Light *light = lights[i];
-		Vec3 cam_dir;
+		Vec3 light_dir;
 
-		cam_dir = vec3_normalize(vec3_sub(cam_pos, hit_pos));
-		ndotl = MAX(0, vec3_dot(normal, cam_dir));
+		light_dir = vec3_normalize(vec3_sub(light->position, hit_pos));
+		ndotl = MAX(0, vec3_dot(normal, light_dir));
 
 		total = colour_add(total, colour_scale(light->intensity,
 				colour_scale(ndotl, light->colour)));
@@ -42,22 +42,22 @@ static Colour specular_light(int n, Light **lights, Vec3 cam_pos,
 {
 	Colour total;
 	int i;
-	
+
 	total.r = total.g = total.b = total.a = 0.0;
 	for (i = 0; i < n; i++)
 	{
 		Light *light = lights[i];
 		Vec3 light_dir, cam_dir, half;
 		float hdotn;
-		
+
 		light_dir = vec3_normalize(vec3_sub(light->position, hit_pos));
 		cam_dir = vec3_normalize(vec3_sub(cam_pos, hit_pos));
 		half = vec3_normalize(vec3_add(light_dir, cam_dir));
 		hdotn = pow(MAX(0, vec3_dot(half, normal)), shininess);
-		
+
 		total = colour_add(total, colour_scale(light->intensity, colour_scale(hdotn, light->colour)));
 	}
-	
+
 	return total;
 }
 
@@ -65,7 +65,7 @@ static Colour material_colour(int n, Light **lights, Material *mat,
 		Hit *hit, Camera *cam)
 {
 	Colour final, light_col, col1, col2;
-	
+
 	switch(mat->type)
 	{
 	case MATERIAL_DIFFUSE:
@@ -89,8 +89,8 @@ static Colour material_colour(int n, Light **lights, Material *mat,
 		printf("Huh?\n");
 		assert(0);
 	}
-	
-	return final;		
+
+	return final;
 }
 
 static Colour ray_colour(Ray ray, Scene *scene, int ttl)
@@ -135,7 +135,7 @@ int main(int argc, char **argv)
 
 	/* START */
 	start = clock();
-	
+
 	for (int j = 0; j < HEIGHT; j++)
 	for (int i = 0; i < WIDTH; i++) /* Indentation doesn't help readability */
 	{
@@ -151,10 +151,10 @@ int main(int argc, char **argv)
 
 		buffer[WIDTH*j + i] = c;
 	}
-	
+
 	/* STOP */
 	stop = clock();
-	
+
 	ms = ((stop - start)*1000.0)/CLOCKS_PER_SEC;
 	printf("Rendering complete in %d s %03d ms\n", (int) ms/1000, 
 			(int) (ms - floor(ms/1000)*1000) );

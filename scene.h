@@ -3,6 +3,7 @@
 
 #include "cgmath.h"
 #include "colour.h"
+#include "mesh.h"
 
 enum { MAX_LIGHTS=8 };
 

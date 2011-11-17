@@ -44,7 +44,6 @@ static Colour parse_colour(const char *string)
 static bool parse_bool(const char *string)
 {
 	assert(string != NULL);
-
 	return (strcmp(string, "true") == 0);
 }
 

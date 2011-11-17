@@ -25,10 +25,10 @@ Ray camera_ray(Camera *cam, int nx, int ny, int i, int j, double near)
 	return r;
 }
 
-static bool ray_sphere_intersect(Ray r, Sphere sph, float *t)
+static bool ray_sphere_intersect(Ray r, Sphere sph, float t[2])
 {
 	Vec3 v;
-	float dd, vd, vv, discriminant, t1, t2;
+	float dd, vd, vv, discriminant;
 	float radius = sph.radius;
 
 	v = r.origin;
@@ -40,40 +40,136 @@ static bool ray_sphere_intersect(Ray r, Sphere sph, float *t)
 	if (discriminant < 0)
 		return false;
 
-	t1 = (-vd + sqrt(discriminant))/dd;
-	t2 = (-vd - sqrt(discriminant))/dd;
+	t[0] = (-vd - sqrt(discriminant))/dd;
+	t[1] = (-vd + sqrt(discriminant))/dd;
 
-	*t = t2;
 	return true;
 }
 
-static float ray_cylinder_intersect(Ray ray, Cylinder cyl)
+static bool ray_cylinder_intersect(Ray ray, Cylinder cyl, float t[2],
+		Vec3 normal[2])
 {
-	float height = cyl.height, radius = cyl.radius;
-	float a, b, c, disc, t1, t2, z;
+	const float height = cyl.height, radius = cyl.radius;
+	const Vec3 o = ray.origin, d = ray.direction;
+	float a, b, c, disc, z0, z1;
+	bool capped = cyl.capped;
 
-	a = SQUARE(ray.direction.x) + SQUARE(ray.direction.y);
-	b = 2*(ray.origin.x*ray.direction.x + ray.origin.y*ray.direction.y);
-	c = SQUARE(ray.origin.x) + SQUARE(ray.origin.y) - SQUARE(radius);
+	a = SQUARE(d.x) + SQUARE(d.y);
+	b = 2*(o.x*d.x + o.y*d.y);
+	c = SQUARE(o.x) + SQUARE(o.y) - SQUARE(radius);
 
+	/* If the projection of the ray on the XY plane doesn't cross the circle
+	 * formed by the projection of the cylinder, it certainly never intersects
+	 * the cylinder. */
 	disc = b*b - 4*a*c;
 	if (disc < 0)
-		return -HUGE_VAL;
+		return false;
 
-	t1 = (-b+sqrt(disc))/(2*a);
-	t2 = (-b-sqrt(disc))/(2*a);
-	/* t2 is the closest intersection? */
+	/* The preliminary intersection points. These might be too high or low. */
+	t[0] = (-b-sqrt(disc))/(2*a);
+	normal[0].x = (o.x + t[0]*d.x)/radius;
+	normal[0].y = (o.y + t[0]*d.y)/radius;
+	normal[0].z = 0;
+	t[1] = (-b+sqrt(disc))/(2*a);
+	normal[1].x = (o.x + t[1]*d.x)/radius;
+	normal[1].y = (o.y + t[1]*d.y)/radius;
+	normal[1].z = 0;
 
-	z = ray.origin.z + t2*ray.direction.z;
-	if (z < 0 || z > height)
-		return -HUGE_VAL;
+	/* The heights will determine whether we hit the actual cylinder, a cap or
+	 * went straight over or under */
+	z0 = o.z + t[0]*d.z;
+	z1 = o.z + t[1]*d.z;
+	if ((z0 < 0 && z1 < 0) || (z0 > height && z1 > height))
+		return false; /* Over or under */
+	if ((z0 < 0 && z1 > height) || (z0 > height && z1 < 0))
+	{
+		/* We went through the top and out the bottom (or vice-versa) without
+		 * touching the sides */
+		if (!capped)
+			return false;
 
-	return t2;
+		/* The order of t[0] and t[1] is arbitrary, there's no guarantee t[0] is the
+		 * closest intersection point. */
+		t[0] = -o.z/d.z;
+		normal[0] = (Vec3) {0, 0, -1};
+		t[1] = (height - o.z)/d.z;
+		normal[1] = (Vec3) {0, 0, 1};
+	}
+	else if (z0 > 0 && z0 < height && z1 > height)
+	{
+		/* t[0] is correct, yet t[1] is too high and will actually hit the cap,
+		 * if one exists. */
+		if (capped)
+		{
+			t[1] = (height - o.z)/d.z;
+			normal[1] = (Vec3) {0, 0, 1};
+		} else
+		{
+			t[1] = t[0];
+			normal[1] = normal[0];
+		}
+	}
+	else if (z0 > 0 && z0 < height && z1 < 0)
+	{
+		/* t[0] is correct and t[1] is too low. */
+		if (capped)
+		{
+			t[1] = -o.z/d.z;
+			normal[1] = (Vec3) {0, 0, -1};
+		}
+		else
+		{
+			t[1] = t[0];
+			normal[1] = normal[0];
+		}
+	}
+	else if (z1 > 0 && z1 < height && z0 > height)
+	{
+		/* t[1] is correct, yet t[0] is too high and will actually hit the cap,
+		 * if one exists. */
+		if (capped)
+		{
+			t[0] = (height - o.z)/d.z;
+			normal[0] = (Vec3) {0, 0, 1};
+		}
+		else
+		{
+			t[0] = t[1];
+			normal[0] = normal[1];
+		}
+	}
+	else if (z1 > 0 && z1 < height && z0 < 0)
+	{
+		/* t[1] is correct and t[0] is too low. */
+		if (capped)
+		{
+			t[0] = -o.z/d.z;
+			normal[0] = (Vec3) {0, 0, -1};
+		}
+		else
+		{
+			t[0] = t[1];
+			normal[0] = normal[1];
+		}
+	}
+	else if (z0 > 0 && z0 < height && z1 > 0 && z1 < height)
+	{
+		/* Nothing left to be fixed */
+	}
+	else
+	{
+		printf("Unhandled case: %g %g %g %g\n", t[0], t[1], z0, z1);
+		__asm("int3");
+		assert("Unhandled case");
+	}
+
+	return true;
 }
 
 bool ray_intersect(Ray ray, Scene *scene, Hit *hit)
 {
-	float t;
+	float t[2] = {-HUGE_VAL, -HUGE_VAL};
+	Vec3 normal[2];
 	Node *hit_node = &scene->graph;
 	Surface *surf = &hit_node->u.surface; /* Necessarily a surface node */
 
@@ -83,17 +179,28 @@ bool ray_intersect(Ray ray, Scene *scene, Hit *hit)
 	switch(surf->shape->type)
 	{
 	case SHAPE_CYLINDER:
-		t = ray_cylinder_intersect(ray, surf->shape->u.cylinder);
-		if (t > 0)
+		if (ray_cylinder_intersect(ray, surf->shape->u.cylinder, t, normal))
 		{
-			hit->t = t;
+			if (t[0] < t[1])
+			{
+				hit->t = t[0];
+				hit->normal = normal[0];
+			} else
+			{
+				hit->t = t[1];
+				hit->normal = normal[1];
+			}
+			hit->position = vec3_add(ray.origin,
+					vec3_scale(hit->t, ray.direction));
 			return true;
 		}
 		break;
 	case SHAPE_SPHERE:
-		if (ray_sphere_intersect(ray, surf->shape->u.sphere, &hit->t))
+		if (ray_sphere_intersect(ray, surf->shape->u.sphere, t))
 		{
-			hit->position = vec3_add(ray.origin, vec3_scale(hit->t, ray.direction));
+			hit->t = MIN(t[0], t[1]);
+			hit->position = vec3_add(ray.origin,
+					vec3_scale(hit->t, ray.direction));
 			hit->normal = vec3_normalize(hit->position);
 			return true;
 		}

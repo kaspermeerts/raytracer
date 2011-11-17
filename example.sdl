@@ -3,15 +3,15 @@
 
 <Sdl>
    <Cameras>
-      <Camera position="5 5 5" direction="-1 -1 -1" up="0 0 1" fovy="45" name="cam0" />
+      <Camera position="3 0 1" direction="-1 0 0" up="0 0 1" fovy="45" name="cam0" />
    </Cameras>
 
    <Lights>
-      <PointLight position="5 0 5" intensity="1" color="1 1 1" name="light0" />
+      <PointLight position="0 3 1" intensity="1" color="1 1 1" name="light0" />
    </Lights>
 
    <Geometry>
-	   <Cylinder radius="1" height="1" capped="true" name="cyl0" />
+	   <Cylinder radius="1" height="2" capped="false" name="cyl0" />
 	   <Sphere radius="3" name="sph0" />
    </Geometry>
 
@@ -22,6 +22,6 @@
    </Materials>
 
    <Scene camera="cam0" lights="light0" background="0.3 0.3 0.3">
-      <Shape geometry="sph0" material="lc0" />
+      <Shape geometry="cyl0" material="dif0" />
    </Scene>
 </Sdl>

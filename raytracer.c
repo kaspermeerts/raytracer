@@ -11,14 +11,16 @@
 #include "ray.h"
 
 /* TODO: Put in config structure */
-const int WIDTH = 256;
-const int HEIGHT = 256;
+const int WIDTH = 512;
+const int HEIGHT = 512;
 
 static Colour diffuse_light(int n, Light **lights, Vec3 cam_pos,
 		Vec3 hit_pos, Vec3 normal)
 {
 	Colour total;
 	int i;
+
+	cam_pos = cam_pos;
 
 	total.r = total.g = total.b = total.a = 0.0;
 	for (i = 0; i < n; i++)

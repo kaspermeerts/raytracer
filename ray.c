@@ -40,8 +40,8 @@ static bool ray_sphere_intersect(Ray r, Sphere sph, float t[2])
 	if (discriminant < 0)
 		return false;
 
-	t[0] = (-vd - sqrt(discriminant))/dd;
-	t[1] = (-vd + sqrt(discriminant))/dd;
+	t[0] = (-vd - sqrtf(discriminant))/dd;
+	t[1] = (-vd + sqrtf(discriminant))/dd;
 
 	return true;
 }
@@ -66,11 +66,11 @@ static bool ray_cylinder_intersect(Ray ray, Cylinder cyl, float t[2],
 		return false;
 
 	/* The preliminary intersection points. These might be too high or low. */
-	t[0] = (-b-sqrt(disc))/(2*a);
+	t[0] = (-b-sqrtf(disc))/(2*a);
 	normal[0].x = (o.x + t[0]*d.x)/radius;
 	normal[0].y = (o.y + t[0]*d.y)/radius;
 	normal[0].z = 0;
-	t[1] = (-b+sqrt(disc))/(2*a);
+	t[1] = (-b+sqrtf(disc))/(2*a);
 	normal[1].x = (o.x + t[1]*d.x)/radius;
 	normal[1].y = (o.y + t[1]*d.y)/radius;
 	normal[1].z = 0;
@@ -166,6 +166,59 @@ static bool ray_cylinder_intersect(Ray ray, Cylinder cyl, float t[2],
 	return true;
 }
 
+static bool ray_cone_intersect(Ray ray, Cone cone, float t[2], Vec3 normal[2])
+{
+	float dx, dy, dz, ox, oy, oz, R, h;
+	float a, b, c, disc;
+	float z0, z1;
+
+	dx = ray.direction.x;
+	dy = ray.direction.y;
+	dz = ray.direction.z;
+
+	ox = ray.origin.x;
+	oy = ray.origin.y;
+	oz = ray.origin.z;
+
+	R = cone.radius;
+	h = cone.height;
+
+	a = SQUARE(dx) + SQUARE(dy) - SQUARE(R/h*dz);
+	b = 2*(ox*dx + oy*dy + SQUARE(R/h)*(- oz*dz + h*dz));
+	c = SQUARE(ox) + SQUARE(oy) - SQUARE(R/h)*(SQUARE(h) - 2*h*oz + SQUARE(oz));
+
+	disc = b*b - 4*a*c;
+	if (disc < 0)
+		return false;
+
+	t[0] = (-b - sqrtf(disc))/(2*a);
+	t[1] = (-b + sqrtf(disc))/(2*a);
+
+	z0 = oz + t[0]*dz;
+	z1 = oz + t[1]*dz;
+
+	if ((z0 > h || z0 < 0) && (z1 > h || z1 < 0))
+		return false;
+	else if (z0 > h || z0 < 0)
+		t[0] = t[1];
+	else if (z1 > h || z1 < 0)
+		t[1] = t[0];
+
+	normal[0].x = h/sqrtf(h*h+R*R)*(ox+t[0]*dx)/
+			sqrtf(SQUARE(ox+t[0]*dx) + SQUARE(oy+t[0]*dy));
+	normal[0].y = h/sqrtf(h*h+R*R)*(oy+t[0]*dy)/
+			sqrtf(SQUARE(ox+t[0]*dx) + SQUARE(oy+t[0]*dy));
+	normal[0].z = R/sqrtf(h*h+R*R);
+
+	normal[1].x = h/sqrtf(h*h+R*R)*(ox+t[1]*dx)/
+			sqrtf(SQUARE(ox+t[1]*dx) + SQUARE(oy+t[1]*dy));
+	normal[1].y = h/sqrtf(h*h+R*R)*(oy+t[1]*dy)/
+			sqrtf(SQUARE(ox+t[1]*dx) + SQUARE(oy+t[1]*dy));
+	normal[1].z = R/sqrtf(h*h+R*R);
+
+	return true;
+}
+
 bool ray_intersect(Ray ray, Scene *scene, Hit *hit)
 {
 	float t[2] = {-HUGE_VAL, -HUGE_VAL};
@@ -178,6 +231,16 @@ bool ray_intersect(Ray ray, Scene *scene, Hit *hit)
 	hit->surface = surf;
 	switch(surf->shape->type)
 	{
+	case SHAPE_SPHERE:
+		if (ray_sphere_intersect(ray, surf->shape->u.sphere, t))
+		{
+			hit->t = MIN(t[0], t[1]);
+			hit->position = vec3_add(ray.origin,
+					vec3_scale(hit->t, ray.direction));
+			hit->normal = vec3_normalize(hit->position);
+			return true;
+		}
+		break;
 	case SHAPE_CYLINDER:
 		if (ray_cylinder_intersect(ray, surf->shape->u.cylinder, t, normal))
 		{
@@ -195,13 +258,21 @@ bool ray_intersect(Ray ray, Scene *scene, Hit *hit)
 			return true;
 		}
 		break;
-	case SHAPE_SPHERE:
-		if (ray_sphere_intersect(ray, surf->shape->u.sphere, t))
+	case SHAPE_CONE:
+		if (ray_cone_intersect(ray, surf->shape->u.cone, t, normal))
 		{
-			hit->t = MIN(t[0], t[1]);
+			if (t[0] < t[1])
+			{
+				hit->t = t[0];
+				hit->normal = normal[0];
+			}
+			else
+			{
+				hit->t = t[1];
+				hit->normal = normal[1];
+			}
 			hit->position = vec3_add(ray.origin,
 					vec3_scale(hit->t, ray.direction));
-			hit->normal = vec3_normalize(hit->position);
 			return true;
 		}
 		break;

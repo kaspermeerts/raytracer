@@ -168,7 +168,7 @@ static bool import_shapes(Sdl *sdl, xmlNode *node, int n)
 			shape->u.cone.capped = parse_bool(xmlGetProp(cur_node, "capped"));
 		} else if (strcmp(cur_node->name, "Torus") == 0)
 		{
-			shape->type = SHAPE_CONE;
+			shape->type = SHAPE_TORUS;
 			shape->u.torus.inner_radius =
 					parse_double(xmlGetProp(cur_node, "innerRadius"));
 			shape->u.torus.outer_radius =

@@ -3,7 +3,7 @@
 
 <Sdl>
    <Cameras>
-      <Camera position="8 0 0" direction="-1 0 0" up="0 0 1" fovy="45" name="cam0" />
+      <Camera position="3 3 0" direction="-1 -1 0" up="0 1 0" fovy="45" name="cam0" />
    </Cameras>
 
    <Lights>
@@ -15,15 +15,18 @@
 	   <Sphere radius="3" name="sph0" />
 	   <Cone radius="1" height="2" capped="false" name="con0" />
 	   <Torus innerRadius="1" outerRadius="2" name="tor0" />
+	   <Mesh src="torus.obj" name="msh0" />
    </Geometry>
 
    <Materials>
       <DiffuseMaterial color="0.75 0.75 1" name="dif0" />
-      <PhongMaterial color="1 1 1" shininess="40" name="pho0" />
-      <LinearCombinedMaterial material1="dif0" weight1="1" material2="pho0" weight2="1" name="lc0" />
+      <PhongMaterial color="1 1 1" shininess="400" name="pho0" />
+      <LinearCombinedMaterial material1="dif0" weight1="1"
+	                          material2="pho0" weight2="1"
+							  name="lc0" />
    </Materials>
 
    <Scene camera="cam0" lights="light0" background="0.3 0.3 0.3">
-      <Shape geometry="con0" material="lc0" />
+      <Shape geometry="msh0" material="lc0" />
    </Scene>
 </Sdl>

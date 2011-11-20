@@ -11,6 +11,7 @@
 #define M_SQRT2 1.4142135623730950488016887242096980785696718753769480731766
 #endif
 
+#define CLAMP(x, a, b) ((x) < (a) ? (a) : ((x) > (b) ? (b) : (x)))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define ABS(x) ((a) > 0 ? (a) : -(a))

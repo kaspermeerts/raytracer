@@ -43,7 +43,7 @@
 	name						ID				#REQUIRED
 >
 
-<!ELEMENT Geometry ((Sphere|Cylinder|Cone|Torus|Teapot|IndexedTriangleSet)+)>
+<!ELEMENT Geometry ((Sphere|Cylinder|Cone|Torus|Teapot|IndexedTriangleSet|Mesh)+)>
 <!ATTLIST Geometry>
 
 <!ELEMENT Sphere EMPTY>
@@ -89,6 +89,12 @@
 	coordinateIndices			CDATA			#REQUIRED
 	normalIndices				CDATA			#IMPLIED
 	textureCoordinateIndices	CDATA			#IMPLIED
+	name						ID				#REQUIRED
+>
+
+<!ELEMENT Mesh EMPTY>
+<!ATTLIST Mesh
+	src							CDATA			#REQUIRED
 	name						ID				#REQUIRED
 >
 

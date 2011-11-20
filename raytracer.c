@@ -9,92 +9,89 @@
 #include "colour.h"
 #include "scene.h"
 #include "ray.h"
+#include "ppm.h"
 
 /* TODO: Put in config structure */
-const int WIDTH = 512;
+const int WIDTH =  512;
 const int HEIGHT = 512;
 
-static Colour diffuse_light(int n, Light **lights, Vec3 cam_pos,
-		Vec3 hit_pos, Vec3 normal)
+static Colour diff_colour(Light *light, Material *mat,
+		Vec3 cam_dir, Vec3 light_dir, Vec3 normal)
 {
-	Colour total;
-	int i;
+	Colour light_col;
+	float ndotv;
 
-	cam_pos = cam_pos;
+	cam_dir = cam_dir;
 
-	total.r = total.g = total.b = total.a = 0.0;
-	for (i = 0; i < n; i++)
-	{
-		float ndotl;
-		Light *light = lights[i];
-		Vec3 light_dir;
+	ndotv = MAX(0, vec3_dot(light_dir, normal));
 
-		light_dir = vec3_normalize(vec3_sub(light->position, hit_pos));
-		ndotl = MAX(0, vec3_dot(normal, light_dir));
-
-		total = colour_add(total, colour_scale(light->intensity,
-				colour_scale(ndotl, light->colour)));
-	}
-
-	return total;
+	light_col = colour_scale(light->intensity, colour_scale(ndotv, light->colour));
+	return colour_mul(mat->colour, light_col);
 }
 
-static Colour specular_light(int n, Light **lights, Vec3 cam_pos,
-		Vec3 hit_pos, Vec3 normal, int shininess)
+static Colour spec_colour(Light *light, Material *mat,
+		Vec3 light_dir, Vec3 cam_dir, Vec3 normal)
 {
-	Colour total;
-	int i;
+	float hdotn;
+	Vec3 half;
+	Colour light_col;
 
-	total.r = total.g = total.b = total.a = 0.0;
-	for (i = 0; i < n; i++)
-	{
-		Light *light = lights[i];
-		Vec3 light_dir, cam_dir, half;
-		float hdotn;
+	half = vec3_normalize(vec3_add(light_dir, cam_dir));
+	hdotn = powf(MAX(0, vec3_dot(half, normal)), mat->shininess);
 
-		light_dir = vec3_normalize(vec3_sub(light->position, hit_pos));
-		cam_dir = vec3_normalize(vec3_sub(cam_pos, hit_pos));
-		half = vec3_normalize(vec3_add(light_dir, cam_dir));
-		hdotn = pow(MAX(0, vec3_dot(half, normal)), shininess);
-
-		total = colour_add(total, colour_scale(light->intensity, colour_scale(hdotn, light->colour)));
-	}
-
-	return total;
+	light_col = colour_scale(light->intensity,
+			colour_scale(hdotn, light->colour));
+	return colour_mul(mat->colour, light_col);
 }
 
-static Colour material_colour(int n, Light **lights, Material *mat,
-		Hit *hit, Camera *cam)
+static Colour light_mat_colour(Light *light, Material *mat,
+		Vec3 cam_dir, Vec3 light_dir, Vec3 normal)
 {
-	Colour final, light_col, col1, col2;
+	Colour final, col1, col2;
 
 	switch(mat->type)
 	{
 	case MATERIAL_DIFFUSE:
-		light_col = diffuse_light(n, lights, cam->position,
-				hit->position, hit->normal);
-		final = colour_mul(mat->colour, light_col);
+		return diff_colour(light, mat, cam_dir, light_dir, normal);
 		break;
 	case MATERIAL_PHONG:
-		light_col = specular_light(n, lights, cam->position,
-				hit->position, hit->normal,	mat->shininess);
-		final = colour_mul(mat->colour, light_col);
+		return spec_colour(light, mat, cam_dir, light_dir, normal);
 		break;
 	case MATERIAL_COMBINED:
-			col1 = material_colour(n, lights, mat->mat1, hit, cam);
-			col2 = material_colour(n, lights, mat->mat2, hit, cam);
-			final = colour_add(
-					colour_scale(mat->weight1, col1),
-					colour_scale(mat->weight2, col2));
+		col1 = light_mat_colour(light, mat->mat1, cam_dir, light_dir, normal);
+		col2 = light_mat_colour(light, mat->mat2, cam_dir, light_dir, normal);
+		final = colour_add(
+				colour_scale(mat->weight1, col1),
+				colour_scale(mat->weight2, col2));
 		break;
 	default:
-		printf("Huh?\n");
-		assert(0);
+		assert("Unknown material!" == NULL);
 	}
 
 	return final;
 }
 
+static Colour hit_colour(Hit *hit, Vec3 cam_pos, int n, Light **lights,
+		Material *mat)
+{
+	Colour total;
+
+	total = BLACK;
+	for (int i = 0; i < n; i++)
+	{
+		Light *light = lights[i];
+		Vec3 cam_dir, light_dir;
+		Colour new;
+
+		cam_dir = vec3_normalize(vec3_sub(cam_pos, hit->position));
+		light_dir = vec3_normalize(vec3_sub(light->position, hit->position));
+
+		new = light_mat_colour(light, mat, cam_dir, light_dir, hit->normal);
+		total = colour_add(total, new);
+	}
+
+	return total;
+}
 static Colour ray_colour(Ray ray, Scene *scene, int ttl)
 {
 	Hit hit;
@@ -112,8 +109,8 @@ static Colour ray_colour(Ray ray, Scene *scene, int ttl)
 
 	mat = hit.surface->material;
 
-	return material_colour(scene->num_lights, scene->light, mat, 
-			&hit, scene->camera);
+	return hit_colour(&hit, scene->camera->position, scene->num_lights,
+			scene->light, mat);
 }
 
 int main(int argc, char **argv)
@@ -164,7 +161,7 @@ int main(int argc, char **argv)
 			(WIDTH*HEIGHT/1000000.0/(ms/1000.0)));
 
 	out = fopen("test.ppm", "w");
-	write_image(buffer, WIDTH, HEIGHT, out);
+	write_ppm_file(buffer, WIDTH, HEIGHT, out);
 	free(buffer);
 	fclose(out);
 

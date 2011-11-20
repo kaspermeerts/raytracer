@@ -160,7 +160,7 @@ static bool ray_cylinder_intersect(Ray ray, Cylinder cyl, float t[2],
 	{
 		printf("Unhandled case: %g %g %g %g\n", t[0], t[1], z0, z1);
 		__asm("int3");
-		assert("Unhandled case");
+		assert("Unhandled case" == NULL);
 	}
 
 	return true;
@@ -217,6 +217,64 @@ static bool ray_cone_intersect(Ray ray, Cone cone, float t[2], Vec3 normal[2])
 	normal[1].z = R/sqrtf(h*h+R*R);
 
 	return true;
+}
+
+static bool ray_triangle_intersect(Ray ray, Vec3 u, Vec3 v, Vec3 w, float *t, float *a, float *b, float *c)
+{
+	Vec3 edge1, edge2, tvec, pvec, qvec;
+	float det;
+
+	edge1 = vec3_sub(v, u);
+	edge2 = vec3_sub(w, u);
+
+	pvec = vec3_cross(ray.direction, edge2);
+	det = vec3_dot(edge1, pvec);
+
+	//assert(det > -0.0001 && det < 0.0001);
+
+	tvec = vec3_sub(ray.origin, u);
+	*b = vec3_dot(tvec, pvec) / det;
+	if (*b < 0.0 || *b > 1.0)
+		return false;
+
+	qvec = vec3_cross(tvec, edge1);
+	*c = vec3_dot(ray.direction, qvec) / det;
+	if (*c < 0.0 || *c + *b > 1.0)
+		return false;
+
+	*t = vec3_dot(edge2, qvec) / det;
+	*a = 1.0 - *b - *c;
+
+	return true;
+}
+
+static bool ray_mesh_intersect(Ray ray, Mesh *mesh, float *t, Vec3 *normal)
+{
+	float tt;
+	float a, b, c;
+
+	*t = HUGE_VAL;
+	for (int i = 0; i < mesh->num_triangles; i++)
+	{
+		Vec3 u, v, w;
+		Triangle tri = mesh->triangle[i];
+
+		u = mesh->vertex[tri.vertex[0].vertex_index];
+		v = mesh->vertex[tri.vertex[1].vertex_index];
+		w = mesh->vertex[tri.vertex[2].vertex_index];
+
+		if (ray_triangle_intersect(ray, u, v, w, &tt, &a, &b, &c) && tt < *t)
+		{
+			*t = tt;
+			*normal = vec3_add(vec3_add(
+					vec3_scale(a, mesh->normal[tri.vertex[0].normal_index]),
+					vec3_scale(b, mesh->normal[tri.vertex[1].normal_index])),
+					vec3_scale(c, mesh->normal[tri.vertex[2].normal_index]));
+		}
+	}
+	if (*t < HUGE_VAL)
+		return true;
+	return false;
 }
 
 bool ray_intersect(Ray ray, Scene *scene, Hit *hit)
@@ -276,8 +334,18 @@ bool ray_intersect(Ray ray, Scene *scene, Hit *hit)
 			return true;
 		}
 		break;
+	case SHAPE_MESH:
+		if (ray_mesh_intersect(ray, surf->shape->u.mesh, t, normal))
+		{
+			hit->t = t[0];
+			hit->normal = normal[0];
+			hit->position = vec3_add(ray.origin, vec3_scale(hit->t, ray.direction));
+			return true;
+		}
+		break;
 	default:
-		printf("What?\n");
+		assert("Unknown shape" == 0);
+		return false;
 		break;
 	}
 

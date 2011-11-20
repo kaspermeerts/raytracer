@@ -6,6 +6,7 @@
 #include <libxml/tree.h>
 
 #include "scene.h"
+#include "mesh.h"
 
 static Vec3 parse_vec3(const char *string)
 {
@@ -173,6 +174,17 @@ static bool import_shapes(Sdl *sdl, xmlNode *node, int n)
 					parse_double(xmlGetProp(cur_node, "innerRadius"));
 			shape->u.torus.outer_radius =
 					parse_double(xmlGetProp(cur_node, "outerRadius"));
+		} else if (strcmp(cur_node->name, "Mesh") == 0)
+		{
+			const char *filename;
+			shape->type = SHAPE_MESH;
+			filename = xmlGetProp(cur_node, "src");
+			shape->u.mesh = mesh_load(filename);
+			if (shape->u.mesh == NULL)
+			{
+				printf("Couldn't load mesh %s\n", filename);
+				return false;
+			}
 		} else
 		{
 			printf("Unknown geometry type: %s\n", cur_node->name);

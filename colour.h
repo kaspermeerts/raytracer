@@ -11,5 +11,6 @@ typedef struct Colour {
 Colour colour_add(Colour a, Colour b);
 Colour colour_scale(float s, Colour a);
 Colour colour_mul(Colour a, Colour b);
-bool write_image(Colour *buffer, int width, int height, FILE *fd);
+
+static const Colour BLACK = {0.0, 0.0, 0.0, 0.0};
 #endif

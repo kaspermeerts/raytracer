@@ -19,6 +19,8 @@
 #define CUBE(x) ((x) * (x) * (x))
 #define RAD(x) ((x) * M_TWO_PI / 360.0)
 
+#include "matrix.h"
 #include "vector.h"
+#include "quaternion.h"
 
 #endif

@@ -3,53 +3,10 @@
 
 #include "cgmath.h"
 
-typedef struct Vertex3 {
-	float x, y, z;
-} Vertex3;
-
-typedef struct Vertex3N {
-	float x, y, z;
-	float nx, ny, nz;
-} Vertex3N;
-
-typedef struct Vertex3NT {
-	float x, y, z;
-	float nx, ny, nz;
-	float u, v;
-} Vertex3NT;
-
-typedef struct Vertex3T {
-	float x, y, z;
-	float u, v;
-} Vertex3T;
-
-typedef struct Vertex2 {
-	float x, y;
-} Vertex2;
-
-typedef struct Vertex2C {
-	float x, y;
-	float r, g, b, a;
-} Vertex2C;
-
-/* Colour and texture? The texture here is a luminance texture, with no colour
- * information. This is e.g. used for text */
-typedef struct Vertex2CT {
-	float x, y;
-	float u, v;
-	float r, g, b, a;
-} Vertex2CT;
-
-typedef struct Vertex2T {
-	float x, y;
-	float u, v;
-} Vertex2T;
-
-typedef struct Matrix Matrix;
-
-extern Matrix *glmProjectionMatrix;
-extern Matrix *glmViewMatrix;
-extern Matrix *glmModelMatrix;
+typedef struct Matrix {
+	double m[16];
+	struct Matrix *next;
+} Matrix;
 
 void glmPrintMatrix(Matrix *mat);
 void glmLoadIdentity(Matrix *mat);
@@ -58,6 +15,7 @@ void glmPopMatrix(Matrix **mat);
 void glmPushMatrix(Matrix **mat);
 void glmFreeMatrixStack(Matrix *mat);
 void glmLoadMatrix(Matrix *mat, double m[16]);
+void glmSaveMatrix(Matrix *mat, double m[16]);
 void glmMultMatrix(Matrix *mat, double m[16]);
 void glmMultQuaternion(Matrix *mat, Quaternion q);
 Vec3 glmTransformVector(Matrix *mat, Vec3);

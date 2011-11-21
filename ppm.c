@@ -5,7 +5,7 @@
 #include "colour.h"
 #include "ppm.h"
 
-bool write_ppm_file(Colour *buffer, int width, int height, FILE *fd)
+bool ppm_write(Colour *buffer, int width, int height, FILE *fd)
 {
 	int i, j;
 

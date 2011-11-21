@@ -5,11 +5,6 @@
 
 #include "glm.h"
 
-struct Matrix {
-	double m[16];
-	struct Matrix *next;
-};
-
 static void matrix_mul_matrix(double *c, double *a, double *b)
 {
 #define A(i, j) a[4*j + i]
@@ -98,6 +93,11 @@ void glmLoadMatrix(Matrix *mat, double m[16])
 	memcpy(mat->m, m, sizeof(double) * 16);
 }
 
+void glmSaveMatrix(Matrix *mat, double m[16])
+{
+	memcpy(m, mat->m, sizeof(double) * 16);
+}
+
 void glmMultMatrix(Matrix *mat, double m[16])
 {
 	matrix_mul_matrix(mat->m, mat->m, m);
@@ -107,7 +107,7 @@ void glmMultQuaternion(Matrix *mat, Quaternion q)
 {
 	Mat3 m3;
 	double m4[16];
-	
+
 	mat3_from_quat(m3, q);
 	mat4_from_mat3(m4, m3);
 
@@ -118,16 +118,21 @@ void glmMultQuaternion(Matrix *mat, Quaternion q)
 Vec3 glmTransformVector(Matrix *mat, Vec3 v)
 {
 	const double v0 = v.x, v1 = v.y, v2 = v.z, v3 = 1;
+	double w;
 	Vec3 out;
-	
+
 #define M(i,j) mat->m[4*j+i]
 	out.x = M(0,0)*v0 + M(0,1)*v1 + M(0,2)*v2 + M(0,3)*v3;
 	out.y = M(1,0)*v0 + M(1,1)*v1 + M(1,2)*v2 + M(1,3)*v3;
 	out.z = M(2,0)*v0 + M(2,1)*v1 + M(2,2)*v2 + M(2,3)*v3;
-//	v.w = M(3,0)*v0 + M(3,1)*v1 + M(3,2)*v2 + M(3,3)*v3;
+	    w = M(3,0)*v0 + M(3,1)*v1 + M(3,2)*v2 + M(3,3)*v3;
 #undef M
-	
-	return out;	
+
+	out.x /= w;
+	out.y /= w;
+	out.z /= w;
+
+	return out;
 }
 
 /* Multiply m on the right with a scaling matrix */

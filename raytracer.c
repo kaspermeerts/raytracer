@@ -157,11 +157,11 @@ int main(int argc, char **argv)
 	ms = ((stop - start)*1000.0)/CLOCKS_PER_SEC;
 	printf("Rendering complete in %d s %03d ms\n", (int) ms/1000, 
 			(int) (ms - floor(ms/1000)*1000) );
-	printf("%.2f megapixels per second\n", 
-			(WIDTH*HEIGHT/1000000.0/(ms/1000.0)));
+	printf("%.2f kilopixels per second\n", 
+			(WIDTH*HEIGHT/1000.0/(ms/1000.0)));
 
-	out = fopen("test.ppm", "w");
-	write_ppm_file(buffer, WIDTH, HEIGHT, out);
+	out = fopen("ray.ppm", "w");
+	ppm_write(buffer, WIDTH, HEIGHT, out);
 	free(buffer);
 	fclose(out);
 

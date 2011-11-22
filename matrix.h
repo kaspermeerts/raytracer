@@ -1,5 +1,5 @@
-#ifndef KOSMOS_MATRIX_H
-#define KOSMOS_MATRIX_H
+#ifndef CG_MATRIX_H
+#define CG_MATRIX_H
 
 #include "vector.h"
 

@@ -1,5 +1,5 @@
-#ifndef KOSMOS_QUATERNION_H
-#define KOSMOS_QUATERNION_H
+#ifndef CG_QUATERNION_H
+#define CG_QUATERNION_H
 
 #include "matrix.h"
 #include "vector.h"

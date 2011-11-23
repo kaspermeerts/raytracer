@@ -9,9 +9,8 @@ enum { MAX_LIGHTS=8 };
 
 typedef struct Camera {
 	Vec3 position;
-	Vec3 direction;
-	Vec3 up;
-	Vec3 u, v, w;
+	Vec3 u, v, w; /* For the raytracer */
+	Quaternion orientation; /* For the rasteriser */
 	float fov;
 	char *name;
 } Camera;
@@ -81,23 +80,18 @@ typedef struct Shape {
 typedef struct Surface {
 	Shape *shape;
 	Material *material;
-	Vec3 position;
-	//Quaternion orientation;
+	double model_to_world[16];
+	double world_to_model[16];
+	struct Surface *next;
 } Surface;
-
-typedef struct Node {
-	enum { NODE_SURFACE } type;
-	union {
-		Surface surface;
-	} u;
-} Node;
 
 typedef struct Scene {
 	Camera *camera;
 	int num_lights;
 	Light *light[MAX_LIGHTS];
 	Colour background;
-	struct Node graph; /* One node? */
+	/*struct Node graph;*/ /* One node? */
+	Surface *root;
 } Scene;
 
 typedef struct Sdl {

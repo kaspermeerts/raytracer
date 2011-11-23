@@ -8,6 +8,7 @@
 bool ppm_write(Colour *buffer, int width, int height, FILE *fd)
 {
 	int i, j;
+	size_t dummy;
 
 	fprintf(fd, "P6\n");
 	fprintf(fd, "%d %d\n", width, height);
@@ -22,7 +23,7 @@ bool ppm_write(Colour *buffer, int width, int height, FILE *fd)
 		out[0] = CLAMP(c.r * 255, 0, 255);
 		out[1] = CLAMP(c.g * 255, 0, 255);
 		out[2] = CLAMP(c.b * 255, 0, 255);
-		fwrite(out, 1, 3, fd);
+		dummy = fwrite(out, 1, 3, fd);
 	}
 	}
 

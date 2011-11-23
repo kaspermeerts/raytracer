@@ -103,7 +103,7 @@ Quaternion quat_from_angle_axis(double angle, double ax,
 	q.x = s*ax/l;
 	q.y = s*ay/l;
 	q.z = s*az/l;
-	
+
 	return q;
 }
 

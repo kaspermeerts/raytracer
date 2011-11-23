@@ -7,6 +7,7 @@
 
 #include "scene.h"
 #include "mesh.h"
+#include "glm.h"
 
 static Vec3 parse_vec3(const char *string)
 {
@@ -66,6 +67,8 @@ static bool import_cameras(Sdl *sdl, xmlNode *node, int n)
 {
 	int i;
 	xmlNode *cur_node;
+	Vec3 direction, up;
+	Mat3 m;
 
 	sdl->num_cameras = n;
 	sdl->camera = calloc(n, sizeof(Camera));
@@ -77,14 +80,20 @@ static bool import_cameras(Sdl *sdl, xmlNode *node, int n)
 		assert(strcmp(cur_node->name, "Camera") == 0);
 
 		cam->position = parse_vec3(xmlGetProp(cur_node, "position"));
-		cam->direction = parse_vec3(xmlGetProp(cur_node, "direction"));
-		cam->up = parse_vec3(xmlGetProp(cur_node, "up"));
 		cam->fov = parse_double(xmlGetProp(cur_node, "fovy"));
 		cam->name = strdup(xmlGetProp(cur_node, "name"));
 
-		cam->w = vec3_scale(-1, vec3_normalize(cam->direction));
-		cam->u = vec3_normalize(vec3_cross(cam->up, cam->w));
+		direction = parse_vec3(xmlGetProp(cur_node, "direction"));
+		up = parse_vec3(xmlGetProp(cur_node, "up"));
+		cam->w = vec3_scale(-1, vec3_normalize(direction));
+		cam->u = vec3_normalize(vec3_cross(up, cam->w));
 		cam->v = vec3_cross(cam->w, cam->u);
+#define M(i, j) m[3*j + i]
+		M(0, 0) = cam->u.x; M(0, 1) = cam->v.x; M(0, 2) = cam->w.x;
+		M(1, 0) = cam->u.y; M(1, 1) = cam->v.y; M(1, 2) = cam->w.y;
+		M(2, 0) = cam->u.z; M(2, 1) = cam->v.z; M(2, 2) = cam->w.z;
+#undef M
+		cam->orientation = quat_from_mat3(m);
 	}
 	assert(i == n);
 
@@ -212,6 +221,7 @@ static bool import_textures(Sdl *sdl, xmlNode *node, int n)
 		assert(strcmp(cur_node->name, "Texture") == 0);
 		tex->source = strdup(xmlGetProp(cur_node, "src"));
 		tex->name = strdup(xmlGetProp(cur_node, "name"));
+		assert("Texture should be loaded here" == NULL);
 		/* TODO: Load texture here? */
 	}
 	assert(i == n);
@@ -276,17 +286,145 @@ static bool import_materials(Sdl *sdl, xmlNode *node, int n)
 	return true;
 }
 
+static bool import_light_refs(Sdl *sdl, const char *light_names)
+{
+	int i;
+	const char *name, *end;
+	Scene *scene = &sdl->scene;
+
+	if (*light_names == '\0')
+	{
+		scene->num_lights = 0;
+		return true;
+	}
+
+	i = 1;
+	for (name = light_names; *name; name++)
+		if (*name == ',')
+			i++;
+	scene->num_lights = i;
+
+	if (scene->num_lights > MAX_LIGHTS)
+	{
+		printf("Too many lights: %d\n", scene->num_lights);
+		return false;
+	}
+
+	i = 0;
+	name = end = light_names;
+	while (*end != '\0')
+	{
+		end++;
+		if (*end == ',' || *end == '\0')
+		{
+			scene->light[i] = NULL;
+			for (int j = 0; j < sdl->num_lights; j++)
+				if (strncmp(sdl->light[j].name, name, end - name) == 0)
+					scene->light[i] = &sdl->light[j];
+			if (scene->light[i] == NULL)
+			{
+				printf("Couldn't find light %d of %s\n", i, light_names);
+				return false;
+			}
+			name = end + 1;
+			i++;
+		}
+	}
+
+	return true;
+}
+
+static bool import_graph(Sdl *sdl, Surface **root, xmlNode *xml_node, Matrix *stack)
+{
+	xmlNode *child_node;
+
+	if (strcmp(xml_node->name, "Shape") == 0)
+	{
+		const char *shape_name, *material_name;
+		Surface *surf;
+		surf = calloc(1, sizeof(Surface));
+		surf->next = *root;
+		*root = surf;
+		shape_name = xmlGetProp(xml_node, "geometry");
+		surf->shape = NULL;
+		for (int i = 0; i < sdl->num_shapes; i++)
+			if (strcmp(sdl->shape[i].name, shape_name) == 0)
+				surf->shape = &sdl->shape[i];
+		if (surf->shape == NULL)
+		{
+			printf("Requested shape \"%s\" not found\n", shape_name);
+			return false;
+		}
+		if (xmlHasProp(xml_node, "texture"))
+		{
+			printf("Sorry, no texture support yet\n");
+			return false;
+		}
+		material_name = xmlGetProp(xml_node, "material");
+		surf->material = NULL;
+		for (int i = 0; i < sdl->num_materials; i++)
+			if (strcmp(sdl->material[i].name, material_name) == 0)
+				surf->material = &sdl->material[i];
+		if (surf->material == NULL)
+		{
+			printf("Requested material \"%s\" not found\n", material_name);
+			return false;
+		}
+		glmSaveMatrix(stack, surf->model_to_world);
+		return true;
+	} else
+	{
+
+		glmPushMatrix(&stack);
+
+		if (strcmp(xml_node->name, "Rotate") == 0)
+		{
+			double angle;
+			Vec3 axis;
+
+			angle = parse_double(xmlGetProp(xml_node, "angle")) *
+					M_TWO_PI / 360.;
+			axis = parse_vec3(xmlGetProp(xml_node, "axis"));
+
+			glmRotate(stack, angle, axis.x, axis.y, axis.z);
+		} else if (strcmp(xml_node->name, "Translate") == 0)
+		{
+			Vec3 v;
+
+			v = parse_vec3(xmlGetProp(xml_node, "vector"));
+
+			glmTranslateVector(stack, v);
+
+		} else if (strcmp(xml_node->name, "Scale") == 0)
+		{
+
+		} else
+		{
+			printf("Unknown node: \"%s\"\n", xml_node->name);
+			return false;
+		}
+
+		child_node = xmlFirstElementChild(xml_node);
+		while (child_node)
+		{
+			if (!import_graph(sdl, root, child_node, stack))
+				return false;
+			child_node = xmlNextElementSibling(child_node);
+		}
+
+		glmPopMatrix(&stack);
+	}
+	return true;
+}
+
 static bool import_scene(Sdl *sdl, xmlNode *node, int n)
 {
 	Scene *scene = &sdl->scene;
 	int i;
-	const char *cam_name, *light_name;
+	const char *cam_name, *light_names;
+	Matrix *model_matrix;
 
-	if (n != 1)
-	{
-		printf("No root nodes yet :p\n");
-		return false;
-	}
+	n = n; /* UNUSED */
 
 	/* Camera */
 	if (!xmlHasProp(node, "camera"))
@@ -297,10 +435,9 @@ static bool import_scene(Sdl *sdl, xmlNode *node, int n)
 	cam_name = xmlGetProp(node, "camera");
 	scene->camera = NULL;
 	for (i = 0; i < sdl->num_cameras; i++)
-	{
 		if (strcmp(sdl->camera[i].name, cam_name) == 0)
 			scene->camera = &sdl->camera[i];
-	}
+
 	if (scene->camera == NULL)
 	{
 		printf("Requested camera \"%s\" not found\n", cam_name);
@@ -313,60 +450,27 @@ static bool import_scene(Sdl *sdl, xmlNode *node, int n)
 		printf("A scene without lights is pretty dark...\n");
 		return false;
 	}
-	light_name = xmlGetProp(node, "lights");
-	if (strchr(light_name, ',') != NULL)
-	{
-		printf("Only one light for now\n");
+	light_names = xmlGetProp(node, "lights");
+	if (!import_light_refs(sdl, light_names))
 		return false;
-	}
-	scene->num_lights = 1;
-	scene->light[0] = NULL;
-	for (i = 0; i < sdl->num_lights; i++)
-	{
-		if (strcmp(sdl->light[i].name, light_name) == 0)
-			scene->light[0] = &sdl->light[i];
-	}
-	if (scene->light[0] == NULL)
-	{
-		printf("Requested light \"%s\" not found\n", light_name);
-		return false;
-	}
 
 	/* Background */
 	scene->background = parse_colour(xmlGetProp(node, "background"));
 
 	/* The actual scene */
-	if (xmlChildElementCount(node) != 1)
+	model_matrix = glmNewMatrixStack();
+	glmLoadIdentity(model_matrix);
+
+	/* TODO: Do all child nodes */
+	if (!import_graph(sdl, &scene->root, xmlFirstElementChild(node),
+			model_matrix))
 	{
-		printf("Blargh\n");
+		printf("Error importing the scene graph\n");
+		glmFreeMatrixStack(model_matrix);
 		return false;
 	}
-	xmlNode *shape_node = xmlFirstElementChild(node);
-	assert(strcmp(shape_node->name, "Shape") == 0);
-	const char *shape_name = xmlGetProp(shape_node, "geometry");
-	scene->graph.u.surface.shape = NULL;
-	for (i = 0; i < sdl->num_shapes; i++)
-	{
-		if (strcmp(sdl->shape[i].name, shape_name) == 0)
-			scene->graph.u.surface.shape = &sdl->shape[i];
-	}
-	if (scene->graph.u.surface.shape == NULL)
-	{
-		printf("Requested shape \"%s\" not found\n", shape_name);
-		return false;
-	}
-	const char *mat_name = xmlGetProp(shape_node, "material");
-	scene->graph.u.surface.material = NULL;
-	for (i = 0; i < sdl->num_materials; i++)
-	{
-		if (strcmp(sdl->material[i].name, mat_name) == 0)
-			scene->graph.u.surface.material = &sdl->material[i];
-	}
-	if (scene->graph.u.surface.material == NULL)
-	{
-		printf("Requested material \"%s\" not found\n", mat_name);
-		return false;
-	}
+	glmFreeMatrixStack(model_matrix);
+	return true;
 
 	return true;
 }

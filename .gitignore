@@ -1,7 +1,6 @@
 lex.yy.c
 lex.yy.h
 *ppm
-xmltest
 raytracer
-lextest
-sdltest
+rasteriser
+rayviewer

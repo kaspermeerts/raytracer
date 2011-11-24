@@ -30,10 +30,7 @@
 	<Scene camera="cam0" lights="light0" background="0.3 0.3 0.3">
 		<Rotate axis="0 0 1" angle="90" >
 			<Translate vector="10 0 0">
-				<Shape geometry="mesh0" material="dif0" />
-			</Translate>
-			<Translate vector="-5 0 1">
-				<Shape geometry="mesh0" material="dif0" />
+				<Shape geometry="sph0" material="dif0" />
 			</Translate>
 		</Rotate>
 	</Scene>

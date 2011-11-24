@@ -6,6 +6,7 @@
 #include "colour.h"
 #include "scene.h"
 #include "ppm.h"
+#include "raster.h"
 
 #define WIDTH  512
 #define HEIGHT 512
@@ -26,6 +27,7 @@ static void tesselate_shape(Shape *shape)
 	shape->type = SHAPE_MESH;
 }
 
+#if 0
 static void cam_view_matrix(const Camera *cam, Matrix *view)
 {
 	glmLoadIdentity(view);
@@ -44,6 +46,10 @@ static void rasterise(Scene *scene, Colour *buffer)
 	Surface *surface = scene->root;
 	assert(surface->shape->type == SHAPE_MESH);
 	Mesh *mesh = surface->shape->u.mesh;
+
+
+	buffer = NULL;
+
 
 	zbuffer = calloc(WIDTH*HEIGHT, sizeof(Depth));
 	projection = glmNewMatrixStack();
@@ -76,11 +82,12 @@ static void rasterise(Scene *scene, Colour *buffer)
 	}
 
 }
+#endif
 
 int main(int argc, char **argv)
 {
 	Sdl *sdl;
-	Colour *buffer;
+	Raster *raster;
 	FILE *out;
 
 	if (argc < 2)
@@ -93,15 +100,17 @@ int main(int argc, char **argv)
 	if (sdl == NULL)
 		return 1;
 
+	raster = raster_new(WIDTH, HEIGHT);
+
 	for (int i = 0; i < sdl->num_shapes; i++)
 		tesselate_shape(&sdl->shape[i]);
 
-	buffer = calloc(WIDTH*HEIGHT, sizeof(Colour));
+//	rasterise(&sdl->scene, buffer);
 
-	rasterise(&sdl->scene, buffer);
+	raster_line(raster, 10, 10, 30, 20);
 
 	out = fopen("raster.ppm", "wb");
-	ppm_write(buffer, WIDTH, HEIGHT, out);
+	ppm_write(raster->buffer, raster->width, raster->height, out);
 	fclose(out);
 
 	return 0;

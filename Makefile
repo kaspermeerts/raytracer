@@ -16,9 +16,9 @@ raytracer: raytracer.c ray.c $(SOURCES)
 	@echo "	CC raytracer"
 	@$(CC) -o raytracer raytracer.c ray.c $(CFLAGS) $(INCFLAGS) $(SOURCES) $(LDFLAGS)
 
-rasteriser: rasteriser.c $(SOURCES)
+rasteriser: rasteriser.c raster.c $(SOURCES)
 	@echo "	CC rasteriser"
-	@$(CC) -o rasteriser rasteriser.c $(CFLAGS) $(INCFLAGS) $(SOURCES) $(LDFLAGS)
+	@$(CC) -o rasteriser rasteriser.c raster.c $(CFLAGS) $(INCFLAGS) $(SOURCES) $(LDFLAGS)
 
 ctags:
 	@echo "	CTAGS"

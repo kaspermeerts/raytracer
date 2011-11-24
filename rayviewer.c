@@ -38,8 +38,8 @@ static bool init_SDL(void)
 	}
 
 	flags = 0;
-	flags |= SDL_HWSURFACE;
-	flags |= SDL_DOUBLEBUF;
+	flags |= SDL_SWSURFACE;
+//	flags |= SDL_DOUBLEBUF;
 	display_surface = SDL_SetVideoMode(WIDTH, HEIGHT, 24, flags);
 	if (!display_surface)
 	{
@@ -56,14 +56,17 @@ static bool init_SDL(void)
 	return true;
 }
 
-static void put_pixel(SDL_Surface *surface, int x, int y, uint8_t r, uint8_t g, uint8_t b)
+static void put_pixel(SDL_Surface *surface, int x, int y, Colour c)
 {
 	int bpp = surface->format->BytesPerPixel;
-	uint8_t *p;
+	uint8_t *p, r, g, b;
 
 	y = HEIGHT - 1 - y;
 
 	p = (uint8_t *)surface->pixels + y * surface->pitch +x * bpp;
+	r = CLAMP(floorf(c.r * 256), 0, 255);
+	g = CLAMP(floorf(c.g * 256), 0, 255);
+	b = CLAMP(floorf(c.b * 256), 0, 255);
 
 	if (bpp == 3)
 	{
@@ -88,30 +91,6 @@ static void put_pixel(SDL_Surface *surface, int x, int y, uint8_t r, uint8_t g, 
 		printf("Unsupported colour depth %d\n", bpp);
 		exit(1);
 	}
-}
-
-static void blit_buffer(Colour *buffer)
-{
-	int i, j;
-
-
-	for (j = 0; j < HEIGHT; j++)
-	for (i = 0; i < WIDTH;  i++)
-	{
-		Colour c = buffer[j*WIDTH + i];
-		uint8_t r, g, b, a;
-
-		r = CLAMP(floorf(c.r * 256), 0, 255);
-		g = CLAMP(floorf(c.g * 256), 0, 255);
-		b = CLAMP(floorf(c.b * 256), 0, 255);
-		a = 255;
-
-		put_pixel(blit_surface, i, j, r, g, b);
-	}
-
-	SDL_BlitSurface(blit_surface, NULL, display_surface, NULL);
-
-	return;
 }
 
 int main(int argc, char **argv)
@@ -143,6 +122,7 @@ int main(int argc, char **argv)
 
 	for (int j = 0; j < HEIGHT; j++)
 	{
+		SDL_LockSurface(display_surface);
 	for (int i = 0; i < WIDTH; i++) /* Indentation doesn't help readability */
 	{
 		Camera *cam = scene->camera;
@@ -156,15 +136,14 @@ int main(int argc, char **argv)
 		c = ray_colour(r, &sdl->scene, 10);
 
 		buffer[WIDTH*j + i] = c;
-	}
+		put_pixel(display_surface, i, j, c);
 		while (SDL_PollEvent(&event))
 			if (event.type == SDL_QUIT)
 				return 0;
-		if (j % 20 == 0)
-		{
-			blit_buffer(buffer);
+	}
+		SDL_UnlockSurface(display_surface);
+		if (j % 10 == 0)
 			SDL_Flip(display_surface);
-		}
 	}
 
 	/* STOP */

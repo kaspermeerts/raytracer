@@ -39,8 +39,7 @@ static bool init_SDL(void)
 
 	flags = 0;
 	flags |= SDL_SWSURFACE;
-//	flags |= SDL_DOUBLEBUF;
-	display_surface = SDL_SetVideoMode(WIDTH, HEIGHT, 24, flags);
+	display_surface = SDL_SetVideoMode(WIDTH, HEIGHT, 32, flags);
 	if (!display_surface)
 	{
 		printf("Couldn't set videomode: %s\n", SDL_GetError());
@@ -51,7 +50,7 @@ static bool init_SDL(void)
 	gmask = 0x0000FF00;
 	bmask = 0x00FF0000;
 	amask = 0xFF000000;
-	blit_surface = SDL_CreateRGBSurface(SDL_SWSURFACE, WIDTH, HEIGHT, 24, rmask, gmask, bmask, 0);
+	blit_surface = SDL_CreateRGBSurface(SDL_SWSURFACE, WIDTH, HEIGHT, 32, rmask, gmask, bmask, 0);
 
 	return true;
 }
@@ -68,29 +67,7 @@ static void put_pixel(SDL_Surface *surface, int x, int y, Colour c)
 	g = CLAMP(floorf(c.g * 256), 0, 255);
 	b = CLAMP(floorf(c.b * 256), 0, 255);
 
-	if (bpp == 3)
-	{
-		if (SDL_BYTEORDER == SDL_BIG_ENDIAN)
-		{
-			printf("Fuck\n");
-			exit(1);
-		} else
-		{
-			p[0] = b;
-			p[1] = g;
-			p[2] = r;
-		}
-	} else if (bpp == 4)
-	{
-		p[0] = 0xFF;
-		p[1] = b;
-		p[2] = g;
-		p[3] = r;
-	} else
-	{
-		printf("Unsupported colour depth %d\n", bpp);
-		exit(1);
-	}
+	*(uint32_t *)p = SDL_MapRGB(surface->format, r, g, b);
 }
 
 int main(int argc, char **argv)
@@ -122,7 +99,6 @@ int main(int argc, char **argv)
 
 	for (int j = 0; j < HEIGHT; j++)
 	{
-		SDL_LockSurface(display_surface);
 	for (int i = 0; i < WIDTH; i++) /* Indentation doesn't help readability */
 	{
 		Camera *cam = scene->camera;
@@ -137,13 +113,11 @@ int main(int argc, char **argv)
 
 		buffer[WIDTH*j + i] = c;
 		put_pixel(display_surface, i, j, c);
+	}
+		SDL_Flip(display_surface);
 		while (SDL_PollEvent(&event))
 			if (event.type == SDL_QUIT)
 				return 0;
-	}
-		SDL_UnlockSurface(display_surface);
-		if (j % 10 == 0)
-			SDL_Flip(display_surface);
 	}
 
 	/* STOP */

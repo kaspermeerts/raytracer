@@ -9,10 +9,9 @@ typedef struct Raster {
 	float *zbuffer;
 } Raster;
 
-#define RASTER_PIXEL(raster, x, y) (((raster).buffer)[(raster).width * (y) + (x)])
-
 Raster *raster_new(int width, int height);
 void raster_destroy(Raster *raster);
+bool raster_pixel(Raster *raster, int x, int y, Colour c);
 void raster_line(Raster *raster, int x0, int y0, int x1, int y1);
 
 #endif

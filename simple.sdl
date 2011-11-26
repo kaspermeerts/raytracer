@@ -3,7 +3,10 @@
 
 <Sdl>
    <Cameras>
-      <Camera position="0 0 5" direction="0 0 -1" up="0 1 0" fovy="45" name="cam0" />
+      <Camera position="5 5 5" direction="-1 -1 -1" up="0 1 0" fovy="45"
+	  		width="512" height="512" name="cam0" />
+      <Camera position="0 0 5" direction=" 0  0 -1" up="0 1 0" fovy="45"
+	  		width="256" height="256" name="cam1" />
    </Cameras>
 
    <Lights>
@@ -12,7 +15,9 @@
    </Lights>
 
    <Geometry>
-	   <Mesh src="triangle.obj" name="mesh" />
+	   <Mesh src="triangle.obj" name="tri" />
+	   <Mesh src="teapot.obj" name="teapot" />
+	   <Mesh src="sphere.obj" name="sphere" />
    </Geometry>
 
    <Materials>
@@ -24,9 +29,9 @@
    </Materials>
 
 	<Scene camera="cam0" lights="light0" background="0.3 0.3 0.3">
-		<Rotate axis="0 0 1" angle="00" >
+		<Rotate axis="0 0 1" angle="0" >
 			<Translate vector="0 0 0">
-				<Shape geometry="mesh" material="dif0" />
+				<Shape geometry="teapot" material="dif0" />
 			</Translate>
 		</Rotate>
 	</Scene>

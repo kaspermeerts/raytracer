@@ -67,3 +67,37 @@ Vec3 vec3_lerp(Vec3 a, Vec3 b, double t)
 
 	return c;
 }
+
+Vec4 vec4_from_vec3(Vec3 v3, double w)
+{
+	Vec4 v4;
+	v4.x = v3.x;
+	v4.y = v3.y;
+	v4.z = v3.z;
+	v4.w =    w;
+
+	return v4;
+}
+
+Vec4 vec4_project(Vec4 v)
+{
+	Vec4 v4;
+
+	v4.x = v.x / v.w;
+	v4.y = v.y / v.w;
+	v4.z = v.z / v.w;
+	v4.w = 1;
+
+	return v4;
+}
+
+Vec3 vec3_from_vec4(Vec4 v4)
+{
+	Vec3 v3;
+
+	v3.x = v4.x;
+	v3.y = v4.y;
+	v3.z = v4.z;
+
+	return v3;
+}

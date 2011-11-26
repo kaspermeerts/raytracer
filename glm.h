@@ -18,7 +18,7 @@ void glmLoadMatrix(Matrix *mat, double m[16]);
 void glmSaveMatrix(Matrix *mat, double m[16]);
 void glmMultMatrix(Matrix *mat, double m[16]);
 void glmMultQuaternion(Matrix *mat, Quaternion q);
-Vec3 glmTransformVector(Matrix *mat, Vec3);
+Vec4 glmTransformVector(Matrix *mat, Vec4);
 void glmScale(Matrix *mat, double x, double y, double z);
 void glmScaleUniform(Matrix *mat, double r);
 void glmTranslate(Matrix *mat, double tx, double ty, double tz);

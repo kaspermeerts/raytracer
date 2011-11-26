@@ -7,6 +7,13 @@ typedef struct Vec3 {
 	double z;
 } Vec3;
 
+typedef struct Vec4 {
+	double x;
+	double y;
+	double z;
+	double w;
+} Vec4;
+
 Vec3 vec3_add(Vec3 a, Vec3 b);
 Vec3 vec3_sub(Vec3 a, Vec3 b);
 Vec3 vec3_scale(double r, Vec3 a);
@@ -16,5 +23,8 @@ double vec3_length(Vec3 a);
 Vec3 vec3_normalize(Vec3 a);
 Vec3 vec3_cross(Vec3 a, Vec3 b);
 Vec3 vec3_lerp(Vec3 a, Vec3 b, double t);
+Vec4 vec4_from_vec3(Vec3, double w);
+Vec4 vec4_project(Vec4 v);
+Vec3 vec3_from_vec4(Vec4 v);
 
 #endif

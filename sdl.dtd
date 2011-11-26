@@ -10,7 +10,9 @@
 	position					CDATA			#REQUIRED
 	direction					CDATA			#REQUIRED
 	up							CDATA			#REQUIRED
-	fovy						CDATA			#REQUIRED	
+	fovy						CDATA			#REQUIRED
+	width						CDATA			#REQUIRED
+	height						CDATA			#REQUIRED
 	name						ID				#REQUIRED
 >
 

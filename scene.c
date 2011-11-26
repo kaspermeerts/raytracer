@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
@@ -28,6 +29,14 @@ static double parse_double(const char *string)
 	char *end;
 
 	return strtod(string, &end);
+}
+
+static int parse_int(const char *string)
+{
+	assert(string != NULL);
+	char *end;
+
+	return strtol(string, &end, 10);
 }
 
 static Colour parse_colour(const char *string)
@@ -81,6 +90,8 @@ static bool import_cameras(Sdl *sdl, xmlNode *node, int n)
 
 		cam->position = parse_vec3(xmlGetProp(cur_node, "position"));
 		cam->fov = parse_double(xmlGetProp(cur_node, "fovy"));
+		cam->width = parse_int(xmlGetProp(cur_node, "width"));
+		cam->height = parse_int(xmlGetProp(cur_node, "height"));
 		cam->name = strdup(xmlGetProp(cur_node, "name"));
 
 		direction = parse_vec3(xmlGetProp(cur_node, "direction"));

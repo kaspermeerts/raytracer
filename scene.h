@@ -12,6 +12,7 @@ typedef struct Camera {
 	Vec3 u, v, w; /* For the raytracer */
 	Quaternion orientation; /* For the rasteriser */
 	float fov;
+	int width, height;
 	char *name;
 } Camera;
 

@@ -473,6 +473,7 @@ static bool import_scene(Sdl *sdl, xmlNode *node, int n)
 	glmLoadIdentity(model_matrix);
 
 	/* TODO: Do all child nodes */
+	scene->root = NULL;
 	if (!import_graph(sdl, &scene->root, xmlFirstElementChild(node),
 			model_matrix))
 	{

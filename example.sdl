@@ -3,11 +3,11 @@
 
 <Sdl>
    <Cameras>
-      <Camera position="3 0 1" direction="-1 0 0" up="0 0 1" fovy="45" name="cam0" />
+      <Camera position="5 0 0" direction="-1 0 0" up="0 0 1" fovy="45" width="512" height="512" name="cam0" />
    </Cameras>
 
    <Lights>
-      <PointLight position="0 3 1" intensity="1" color="1 1 1" name="light0" />
+      <PointLight position="0 5 0" intensity="1" color="1 1 1" name="light0" />
 	  <PointLight position="0 2 2" intensity="1" color="1 1 0" name="light1" />
    </Lights>
 
@@ -28,9 +28,10 @@
    </Materials>
 
 	<Scene camera="cam0" lights="light0" background="0.3 0.3 0.3">
-		<Rotate axis="0 0 1" angle="90" >
-			<Translate vector="10 0 0">
+		<Rotate axis="0 0 1" angle="0" >
+			<Translate vector="0 0 0">
 				<Shape geometry="sph0" material="dif0" />
+				<Shape geometry="cyl0" material="dif0" />
 			</Translate>
 		</Rotate>
 	</Scene>

@@ -277,19 +277,31 @@ static bool ray_mesh_intersect(Ray ray, Mesh *mesh, float *t, Vec3 *normal)
 	return false;
 }
 
-bool ray_intersect(Ray ray, Scene *scene, Hit *hit)
+
+static bool ray_surface_intersect(Ray ray, Surface *surf, Hit *hit)
 {
 	float t[2] = {-HUGE_VAL, -HUGE_VAL};
 	Vec3 normal[2];
-	Surface *surf = scene->root;
+	bool intersect;
 
-	hit->surface = surf;
 	switch(surf->shape->type)
 	{
 	case SHAPE_SPHERE:
-		if (ray_sphere_intersect(ray, surf->shape->u.sphere, t))
+		intersect = ray_sphere_intersect(ray, surf->shape->u.sphere, t);
+		if (intersect)
 		{
-			hit->t = MIN(t[0], t[1]);
+			if (t[0] < 0 && t[1] < 0)
+			{
+				intersect = false;
+				break;
+			}
+			else if (t[0] > 0 && t[1] < 0)
+				hit->t = t[0];
+			else if (t[1] > 0 && t[0] < 0)
+				hit->t = t[1];
+			else
+				hit->t = MIN(t[0], t[1]);
+
 			hit->position = vec3_add(ray.origin,
 					vec3_scale(hit->t, ray.direction));
 			hit->normal = vec3_normalize(hit->position);
@@ -347,6 +359,32 @@ bool ray_intersect(Ray ray, Scene *scene, Hit *hit)
 	}
 
 	return false;
+}
+
+bool ray_intersect(Ray ray, Scene *scene, Hit *hit)
+{
+	Hit testhit;
+	Surface *surface = scene->root;
+
+	hit->surface = NULL;
+
+	while (surface)
+	{
+		testhit.surface = surface;
+		if (ray_surface_intersect(ray, surface, &testhit))
+		{
+			if (hit->surface == NULL || testhit.t < hit->t)
+			{
+				*hit = testhit;
+			}
+		}
+		surface = surface->next;
+	}
+
+	if (hit->surface != NULL)
+		return true;
+	else
+		return false;
 }
 
 /***********

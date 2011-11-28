@@ -28,10 +28,12 @@
    </Materials>
 
 	<Scene camera="cam0" lights="light0" background="0.3 0.3 0.3">
-		<Rotate axis="0 0 1" angle="0" >
-			<Translate vector="0 0 0">
-				<Shape geometry="sph0" material="dif0" />
-				<Shape geometry="cyl0" material="dif0" />
+		<Rotate axis="5 0 1" angle="45" >
+			<Translate vector="1 -6 9">
+				<Rotate axis="1 0 0" angle="15">
+					<Shape geometry="sph0" material="dif0" />
+					<Shape geometry="cyl0" material="dif0" />
+				</Rotate>
 			</Translate>
 		</Rotate>
 	</Scene>

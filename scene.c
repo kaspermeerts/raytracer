@@ -8,7 +8,6 @@
 
 #include "scene.h"
 #include "mesh.h"
-#include "glm.h"
 
 static Vec3 parse_vec3(const char *string)
 {
@@ -345,7 +344,8 @@ static bool import_light_refs(Sdl *sdl, const char *light_names)
 	return true;
 }
 
-static bool import_graph(Sdl *sdl, Surface **root, xmlNode *xml_node, Matrix *stack)
+static bool import_graph(Sdl *sdl, Surface **root, xmlNode *xml_node,
+		MatrixStack *stack)
 {
 	xmlNode *child_node;
 
@@ -381,12 +381,13 @@ static bool import_graph(Sdl *sdl, Surface **root, xmlNode *xml_node, Matrix *st
 			printf("Requested material \"%s\" not found\n", material_name);
 			return false;
 		}
-		glmSaveMatrix(stack, surf->model_to_world);
-		return true;
+		mat4_copy(surf->model_to_world, stack->top->matrix);
+		mat4_copy(surf->world_to_model, stack->top->inverse);
 	} else
 	{
+		Mat4 mat, inv;
 
-		glmPushMatrix(&stack);
+		matstack_push(stack);
 
 		if (strcmp(xml_node->name, "Rotate") == 0)
 		{
@@ -397,24 +398,32 @@ static bool import_graph(Sdl *sdl, Surface **root, xmlNode *xml_node, Matrix *st
 					M_TWO_PI / 360.;
 			axis = parse_vec3(xmlGetProp(xml_node, "axis"));
 
-			glmRotate(stack, angle, axis.x, axis.y, axis.z);
+			mat4_rotate(mat,  angle, axis.x, axis.y, axis.z);
+			mat4_rotate(inv, -angle, axis.x, axis.y, axis.z);
 		} else if (strcmp(xml_node->name, "Translate") == 0)
 		{
 			Vec3 v;
 
 			v = parse_vec3(xmlGetProp(xml_node, "vector"));
 
-			glmTranslateVector(stack, v);
-
+			mat4_translate_vector(mat, v);
+			mat4_translate_vector(inv, vec3_scale(-1, v));
 		} else if (strcmp(xml_node->name, "Scale") == 0)
 		{
+			Vec3 v;
 
+			v = parse_vec3(xmlGetProp(xml_node, "scale"));
+			mat4_scale(mat, v.x, v.y, v.z);
+			mat4_scale(inv, 1./v.x, 1./v.y, 1./v.z);
 		} else
 		{
 			printf("Unknown node: \"%s\"\n", xml_node->name);
 			return false;
 		}
 
+		mat4_print(stack->top->inverse);
+		mat4_rmul(stack->top->matrix, mat);
+		mat4_lmul(inv, stack->top->inverse);
 		child_node = xmlFirstElementChild(xml_node);
 		while (child_node)
 		{
@@ -423,7 +432,7 @@ static bool import_graph(Sdl *sdl, Surface **root, xmlNode *xml_node, Matrix *st
 			child_node = xmlNextElementSibling(child_node);
 		}
 
-		glmPopMatrix(&stack);
+		matstack_pop(stack);
 	}
 	return true;
 }
@@ -433,7 +442,7 @@ static bool import_scene(Sdl *sdl, xmlNode *node, int n)
 	Scene *scene = &sdl->scene;
 	int i;
 	const char *cam_name, *light_names;
-	Matrix *model_matrix;
+	MatrixStack *model_matrix;
 
 	n = n; /* UNUSED */
 
@@ -469,20 +478,20 @@ static bool import_scene(Sdl *sdl, xmlNode *node, int n)
 	scene->background = parse_colour(xmlGetProp(node, "background"));
 
 	/* The actual scene */
-	model_matrix = glmNewMatrixStack();
-	glmLoadIdentity(model_matrix);
+	model_matrix = matstack_new();
+	matstack_push(model_matrix);
+	mat4_identity(model_matrix->top->matrix);
+	mat4_identity(model_matrix->top->inverse);
 
-	/* TODO: Do all child nodes */
 	scene->root = NULL;
 	if (!import_graph(sdl, &scene->root, xmlFirstElementChild(node),
 			model_matrix))
 	{
 		printf("Error importing the scene graph\n");
-		glmFreeMatrixStack(model_matrix);
+		matstack_destroy(model_matrix);
 		return false;
 	}
-	glmFreeMatrixStack(model_matrix);
-	return true;
+	matstack_destroy(model_matrix);
 
 	return true;
 }

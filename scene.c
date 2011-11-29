@@ -387,8 +387,6 @@ static bool import_graph(Sdl *sdl, Surface **root, xmlNode *xml_node,
 	{
 		Mat4 mat, inv;
 
-		matstack_push(stack);
-
 		if (strcmp(xml_node->name, "Rotate") == 0)
 		{
 			double angle;
@@ -421,7 +419,8 @@ static bool import_graph(Sdl *sdl, Surface **root, xmlNode *xml_node,
 			return false;
 		}
 
-		mat4_print(stack->top->inverse);
+		matstack_push(stack);
+
 		mat4_rmul(stack->top->matrix, mat);
 		mat4_lmul(inv, stack->top->inverse);
 		child_node = xmlFirstElementChild(xml_node);

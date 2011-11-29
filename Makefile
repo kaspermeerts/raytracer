@@ -2,7 +2,7 @@ CC = gcc
 DEFINES =
 WARNINGS = -Wextra -Wall -Wwrite-strings -Wshadow -Wpointer-arith -Wcast-qual -Wstrict-prototypes -Wmissing-prototypes -Wstrict-aliasing -Wno-pointer-sign -pedantic
 CFLAGS = $(WARNINGS) $(DEFINES) -std=c99 -O0 -ffast-math -pipe -ggdb `xml2-config --cflags`
-SOURCES = colour.c vector.c scene.c ppm.c mesh.c matrix.c quaternion.c
+SOURCES = colour.c vector.c scene.c ppm.c mesh.c material.c matrix.c quaternion.c
 INCFLAGS = -I.
 LDFLAGS = -lm -Lobjreader -lobjreader `xml2-config --libs`
 

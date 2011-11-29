@@ -13,6 +13,8 @@ Raster *raster_new(int width, int height)
 	raster->height = height;
 	raster->buffer = calloc(width*height, sizeof(Colour));
 	raster->zbuffer = calloc(width*height, sizeof(raster->zbuffer[0]));
+	for (int i = 0; i < width*height; i++)
+		raster->zbuffer[i] = HUGE_VAL;
 
 	return raster;
 }

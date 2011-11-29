@@ -4,6 +4,7 @@
 #include "cgmath.h"
 #include "colour.h"
 #include "mesh.h"
+#include "material.h"
 
 enum { MAX_LIGHTS=8 };
 
@@ -15,34 +16,6 @@ typedef struct Camera {
 	int width, height;
 	char *name;
 } Camera;
-
-typedef struct Light {
-	enum { LIGHT_DIRECTIONAL, LIGHT_POINT, LIGHT_SPOT } type;
-	Vec3 position;
-	Vec3 direction; /* Not necessarily normalized */
-	float angle;
-	Colour colour;
-	float intensity;
-	char *name;
-} Light;
-
-typedef struct Texture {
-	char *source;
-	int width, height;
-	Colour *image;
-	char *name;
-} Texture;
-
-typedef struct Material {
-	enum { MATERIAL_DIFFUSE, MATERIAL_PHONG, MATERIAL_COMBINED } type;
-	Colour colour;
-	int shininess;
-	float weight1;
-	struct Material *mat1;
-	float weight2;
-	struct Material *mat2;
-	char *name;
-} Material;
 
 typedef struct Sphere {
 	float radius;

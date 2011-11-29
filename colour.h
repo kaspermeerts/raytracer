@@ -16,4 +16,5 @@ static const Colour BLACK = {0.0, 0.0, 0.0, 1.0};
 static const Colour RED   = {1.0, 0.0, 0.0, 1.0};
 static const Colour GREEN = {0.0, 1.0, 0.0, 1.0};
 static const Colour BLUE  = {0.0, 0.0, 1.0, 1.0};
+
 #endif

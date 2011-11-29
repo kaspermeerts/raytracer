@@ -58,6 +58,21 @@ void matstack_push(MatrixStack *stack)
 	}
 }
 
+Vec4 mat4_transform(Mat4 m, Vec4 v)
+{
+	const double v0 = v.x, v1 = v.y, v2 = v.z, v3 = v.w;
+	Vec4 out;
+
+#define M(i,j) m[4*j+i]
+	out.x = M(0,0)*v0 + M(0,1)*v1 + M(0,2)*v2 + M(0,3)*v3;
+	out.y = M(1,0)*v0 + M(1,1)*v1 + M(1,2)*v2 + M(1,3)*v3;
+	out.z = M(2,0)*v0 + M(2,1)*v1 + M(2,2)*v2 + M(2,3)*v3;
+	out.w = M(3,0)*v0 + M(3,1)*v1 + M(3,2)*v2 + M(3,3)*v3;
+#undef M
+
+	return out;
+}
+
 void mat4_print(Mat4 m)
 {
 	printf("%g\t%g\t%g\t%g\n", m[ 0], m[ 4], m[ 8], m[12]);
@@ -183,4 +198,61 @@ void mat4_quaternion(Mat4 m, Quaternion q)
 	Mat3 m3;
 	mat3_from_quat(m3, q);
 	mat4_from_mat3(m, m3);
+}
+
+/* Perspective */
+void mat4_ortho(Mat4 m, double left, double right, double bottom, double top,
+		double near, double far)
+{
+#define M(i,j) m[4*j + i]
+	M(0,0) = 2.0 / (right - left);
+	M(0,1) = 0.0;
+	M(0,2) = 0.0;
+	M(0,3) = -(right + left) / (right - left);
+
+	M(1,0) = 0.0;
+	M(1,1) = 2.0 / (top - bottom);
+	M(1,2) = 0.0;
+	M(1,3) = -(top + bottom) / (top - bottom);
+
+	M(2,0) = 0.0;
+	M(2,1) = 0.0;
+	M(2,2) = 2.0 / (far - near);
+	M(2,3) = -(far  +  near) / (far  -  near);
+
+	M(3,0) = 0.0;
+	M(3,1) = 0.0;
+	M(3,2) = 0.0;
+	M(3,3) = 1.0;
+#undef M
+}
+
+void mat4_frustum(Mat4 m, double l, double r, double b, double t,
+		double near, double far)
+{
+	double x, y, A, B, C, D;
+
+	x = 2*near/(r - l);
+	y = 2*near/(t - b);
+	A = (r + l)/(r - l);
+	B = (t + b)/(t - b);
+	C = (far + near)/(far - near);
+	D = 2 * far * near / (far - near);
+
+#define M(i, j) m[4*j + i]
+   M(0,0) = x;  M(0,1) = 0;  M(0,2) =  A;  M(0,3) = 0;
+   M(1,0) = 0;  M(1,1) = y;  M(1,2) =  B;  M(1,3) = 0;
+   M(2,0) = 0;  M(2,1) = 0;  M(2,2) =  C;  M(2,3) = D;
+   M(3,0) = 0;  M(3,1) = 0;  M(3,2) = -1;  M(3,3) = 0;
+#undef  M
+}
+
+void mat4_perspective(Mat4 m, double fovy, double aspect, double near,
+		double far)
+{
+	double right, top;
+
+	top = near * tan(fovy/2.0);
+	right = top * aspect;
+	mat4_frustum(m, -right, right, -top, top, near, far);
 }

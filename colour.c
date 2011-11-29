@@ -36,5 +36,3 @@ Colour colour_scale(float s, Colour a)
 
 	return b;
 }
-
-

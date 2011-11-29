@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "glm.h"
 #include "colour.h"
 #include "scene.h"
 #include "ppm.h"
@@ -22,7 +21,8 @@ static void tesselate_shape(Shape *shape)
 	shape->type = SHAPE_MESH;
 }
 
-static void raster_triangle(Raster *raster, int x0, int y0, int x1, int y1, int x2, int y2)
+static void raster_triangle(Raster *raster, int x0, int y0, float z0,
+		int x1, int y1, float z1, int x2, int y2, float z2)
 {
 	int xmin, ymin, xmax, ymax;
 	float fa, fb, fc;
@@ -62,18 +62,27 @@ static void raster_triangle(Raster *raster, int x0, int y0, int x1, int y1, int 
 				if (a > 0 || fa*fao > 0)
 				if (b > 0 || fb*fbo > 0)
 				if (c > 0 || fc*fco > 0)
-					raster_pixel(raster, x, y, col);
+				{
+					float z;
+					z = a*z0 + b*z1 + c*z2;
+					if (raster->zbuffer[raster->width*y + x] > z)
+					{
+						raster->zbuffer[raster->width*y + x] = z;
+						raster_pixel(raster, x, y, col);
+					}
+				}
 			}
 		}
 	}
 }
 
-static void rasterise_mesh(Raster *raster, Mesh *mesh, Matrix *mvp)
+static void rasterise_mesh(Raster *raster, Mesh *mesh, Mat4 mvp)
 {
 	for (int i = 0; i < mesh->num_triangles; i++)
 	{
 		Vec4 a, b, c;
 		int x0, x1, x2, y0, y1, y2;
+		float z0, z1, z2;
 		int nx, ny;
 
 		a = vec4_from_vec3(
@@ -83,9 +92,9 @@ static void rasterise_mesh(Raster *raster, Mesh *mesh, Matrix *mvp)
 		c = vec4_from_vec3(
 				mesh->vertex[mesh->triangle[i].vertex[2].vertex_index], 1);
 
-		a = glmTransformVector(mvp, a);
-		b = glmTransformVector(mvp, b);
-		c = glmTransformVector(mvp, c);
+		a = mat4_transform(mvp, a);
+		b = mat4_transform(mvp, b);
+		c = mat4_transform(mvp, c);
 
 		a = vec4_project(a);
 		b = vec4_project(b);
@@ -100,71 +109,69 @@ static void rasterise_mesh(Raster *raster, Mesh *mesh, Matrix *mvp)
 		y1 = ny/2*(b.y + 1) - 0.5;
 		y2 = ny/2*(c.y + 1) - 0.5;
 
+		z0 = a.z;
+		z1 = b.z;
+		z2 = c.z;
+
 #if 0
 		raster_line(raster, x0, y0, x1, y1);
 		raster_line(raster, x1, y1, x2, y2);
 		raster_line(raster, x2, y2, x0, y0);
 #else
-		raster_triangle(raster, x0, y0, x1, y1, x2, y2);
+		raster_triangle(raster, x0, y0, z0, x1, y1, z1, x2, y2, z2);
 #endif
 	}
 }
 
-static void cam_proj_matrix(const Camera *cam, Matrix *proj, float znear, float zfar)
+static void cam_proj_matrix(const Camera *cam, Mat4 proj, float znear, float zfar)
 {
 	float aspect = ((float) cam->width) / ((float) cam->height);
-	printf("%g %g\n", cam->fov, aspect);
-	glmPerspective(proj, cam->fov*M_TWO_PI/360., aspect, znear, zfar);
+	mat4_perspective(proj, cam->fov*M_TWO_PI/360., aspect, znear, zfar);
 }
 
-static void cam_view_matrix(const Camera *cam, Matrix *view)
+static void cam_view_matrix(const Camera *cam, Mat4 view)
 {
-	glmLoadIdentity(view);
+	Mat4 d;
+
+	mat4_identity(view);
 	/* Because the matrix transforms vertices, we have to give
 	 * the inverse transformation */
-	glmMultQuaternion(view, quat_conjugate(cam->orientation));
-	glmTranslateVector(view, vec3_scale(-1, cam->position));
+	mat4_quaternion(d, quat_conjugate(cam->orientation));
+	mat4_rmul(view, d);
+	mat4_translate_vector(d, vec3_scale(-1, cam->position));
+	mat4_rmul(view, d);
 }
 
 static void rasterise(Raster *raster, Scene *scene)
 {
-	Matrix *mvp, *projection, *view, *model;
-	double proj_m[16], view_m[16], model_m[16];
+	Mat4 proj, view, model, mvp;
 	Surface *surface = scene->root;
 	assert(surface->shape->type == SHAPE_MESH);
 	Mesh *mesh = surface->shape->u.mesh;
 
-	projection = glmNewMatrixStack();
-	view = glmNewMatrixStack();
-	model = glmNewMatrixStack();
-	mvp = glmNewMatrixStack();
-
 	/* Projection */
-	glmLoadIdentity(projection);
-	//glmOrtho(projection, -1, 1, -1, 1, -1, 1);
-	cam_proj_matrix(scene->camera, projection, 0, 100e9);
+	//mat4_ortho(proj, -1, 1, -1, 1, -1, 1);
+	cam_proj_matrix(scene->camera, proj, 1, 100);
 	/* View */
 	cam_view_matrix(scene->camera, view);
 	/* Model */
-	glmLoadMatrix(model, surface->model_to_world);
+	mat4_copy(model, surface->model_to_world);
 
-	glmSaveMatrix(projection, proj_m);
-	glmSaveMatrix(view, view_m);
-	glmSaveMatrix(model, model_m);
+	mat4_identity(mvp);
+	mat4_rmul(mvp, proj);
+	mat4_rmul(mvp, view);
+	mat4_rmul(mvp, model);
 
-	glmLoadIdentity(mvp);
-	glmMultMatrix(mvp, proj_m);
-	glmMultMatrix(mvp, view_m);
-	glmMultMatrix(mvp, model_m);
-
+#if 0
 	printf("Projection\n");
-	glmPrintMatrix(projection);
+	mat4_print(proj);
 	printf("\nView\n");
-	glmPrintMatrix(view);
+	mat4_print(view);
 	printf("\nModel\n");
-	glmPrintMatrix(model);
+	mat4_print(model);
 	printf("\nmvp\n");
-	glmPrintMatrix(mvp);
+	mat4_print(mvp);
+#endif
 
 	rasterise_mesh(raster, mesh, mvp);
 }

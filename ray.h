@@ -7,6 +7,8 @@
 typedef struct Ray {
 	Vec3 origin;
 	Vec3 direction; /* Not necessarily normalized */
+	float near;
+	float far;
 } Ray;
 
 typedef struct Hit {

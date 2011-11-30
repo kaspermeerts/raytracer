@@ -3,17 +3,17 @@
 
 <Sdl>
    <Cameras>
-      <Camera position="0 7 0" direction="0 -1 0" up="0 0 1" fovy="45"
+      <Camera position="-2 3 -2" direction="2 -1 2" up="0 1 0" fovy="45"
 	  		width="512" height="512" name="cam0" />
    </Cameras>
 
    <Lights>
-      <PointLight position="1 9 1" intensity="1" color="1 1 1" name="light0" />
-	  <PointLight position="1 5 5" intensity="1" color="1 1 0" name="light1" />
+      <PointLight position="0 3 0" intensity="0.9" color="1 1 1" name="light0" />
+	  <PointLight position="5 1 5" intensity="0.0" color="1 1 0" name="light1" />
    </Lights>
 
    <Geometry>
-	   <Cylinder radius="1" height="2" capped="true" name="cyl0" />
+	   <Cylinder radius="1" height="2" capped="false" name="cyl0" />
 	   <Sphere radius="1" name="sph0" />
 	   <Cone radius="1" height="2" capped="false" name="con0" />
 	   <Torus innerRadius="1" outerRadius="2" name="tor0" />
@@ -35,20 +35,19 @@
 
 	<Scene camera="cam0" lights="light0,light1" background="0.3 0.3 0.3">
 		<Translate vector="0 0 0">
-		<Translate vector="2 0 2">
-			<Shape geometry="sph0" material="lc0" />
+
+		<Translate vector="1 1 2">
+				<Shape geometry="sph0" material="lc0" />
 		</Translate>
-		<Translate vector="-2 0 2">
-			<Shape geometry="sph0" material="lc0" />
-		</Translate>
-		<Translate vector="2 0 -2">
-			<Shape geometry="sph0" material="lc0" />
+		<Translate vector="2 1 0">
+			<Rotate axis="0 1 0" angle="90" >
+			<Shape geometry="cyl0" material="lc0" />
+			</Rotate>
 		</Translate>
 		<Translate vector="0 0 0">
-			<Shape geometry="sph0" material="lcmirror" />
-		</Translate>
-		<Translate vector="-2 0 -2">
-			<Shape geometry="sph0" material="lcmirror" />
+		<Scale scale="1000 0.01 1000">
+<!--			<Shape geometry="sph0" material="dif0" /> -->
+		</Scale>
 		</Translate>
 
 		</Translate>

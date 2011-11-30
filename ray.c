@@ -2,8 +2,6 @@
 #include <math.h>
 #include "ray.h"
 
-static int depth;
-
 Ray camera_ray(Camera *cam, int nx, int ny, int i, int j, double near)
 {
 	float d, u, v;
@@ -23,11 +21,13 @@ Ray camera_ray(Camera *cam, int nx, int ny, int i, int j, double near)
 			vec3_scale(-d, cam->w), vec3_add(
 			vec3_scale( u, cam->u),
 			vec3_scale( v, cam->v))));
+	r.near = 0;
+	r.far = HUGE_VAL;
 
 	return r;
 }
 
-static bool ray_sphere_intersect(Ray r, Sphere sph, float t[2], Vec3 normal[2])
+static int ray_sphere_intersect(Ray r, Sphere sph, float t[2], Vec3 normal[2])
 {
 	Vec3 v;
 	float dd, vd, vv, discriminant;
@@ -40,18 +40,26 @@ static bool ray_sphere_intersect(Ray r, Sphere sph, float t[2], Vec3 normal[2])
 
 	discriminant = vd*vd - dd*(vv - radius*radius);
 	if (discriminant < 0)
-		return false;
+		return 0;
+	else if (discriminant == 0)
+	{
+		t[0] = -vd/dd;
+		normal[0] = vec3_normalize(vec3_add(r.origin,
+				vec3_scale(t[0], r.direction)));
+		return 1;
+	} else
+	{
 
-	t[0] = (-vd - sqrtf(discriminant))/dd;
-	t[1] = (-vd + sqrtf(discriminant))/dd;
+		t[0] = (-vd - sqrtf(discriminant))/dd;
+		t[1] = (-vd + sqrtf(discriminant))/dd;
 
-	normal[0] = vec3_normalize(vec3_add(r.origin, vec3_scale(t[0], r.direction)));
-	normal[1] = vec3_normalize(vec3_add(r.origin, vec3_scale(t[1], r.direction)));
-
-	return true;
+		normal[0] = vec3_add(r.origin, vec3_scale(t[0], r.direction));
+		normal[1] = vec3_add(r.origin, vec3_scale(t[1], r.direction));
+		return 2;
+	}
 }
 
-static bool ray_cylinder_intersect(Ray ray, Cylinder cyl, float t[2],
+static int ray_cylinder_intersect(Ray ray, Cylinder cyl, float t[2],
 		Vec3 normal[2])
 {
 	const float height = cyl.height, radius = cyl.radius;
@@ -68,7 +76,7 @@ static bool ray_cylinder_intersect(Ray ray, Cylinder cyl, float t[2],
 	 * the cylinder. */
 	disc = b*b - 4*a*c;
 	if (disc < 0)
-		return false;
+		return 0;
 
 	/* The preliminary intersection points. These might be too high or low. */
 	t[0] = (-b-sqrtf(disc))/(2*a);
@@ -168,10 +176,10 @@ static bool ray_cylinder_intersect(Ray ray, Cylinder cyl, float t[2],
 		assert("Unhandled case" == NULL);
 	}
 
-	return true;
+	return 2;
 }
 
-static bool ray_cone_intersect(Ray ray, Cone cone, float t[2], Vec3 normal[2])
+static int ray_cone_intersect(Ray ray, Cone cone, float t[2], Vec3 normal[2])
 {
 	float dx, dy, dz, ox, oy, oz, R, h;
 	float a, b, c, disc;
@@ -194,7 +202,7 @@ static bool ray_cone_intersect(Ray ray, Cone cone, float t[2], Vec3 normal[2])
 
 	disc = b*b - 4*a*c;
 	if (disc < 0)
-		return false;
+		return 0;
 
 	t[0] = (-b - sqrtf(disc))/(2*a);
 	t[1] = (-b + sqrtf(disc))/(2*a);
@@ -221,10 +229,10 @@ static bool ray_cone_intersect(Ray ray, Cone cone, float t[2], Vec3 normal[2])
 			sqrtf(SQUARE(ox+t[1]*dx) + SQUARE(oy+t[1]*dy));
 	normal[1].z = R/sqrtf(h*h+R*R);
 
-	return true;
+	return 1;
 }
 
-static bool ray_triangle_intersect(Ray ray, Vec3 u, Vec3 v, Vec3 w, float *t, float *a, float *b, float *c)
+static int ray_triangle_intersect(Ray ray, Vec3 u, Vec3 v, Vec3 w, float *t, float *a, float *b, float *c)
 {
 	Vec3 edge1, edge2, tvec, pvec, qvec;
 	float det;
@@ -245,15 +253,15 @@ static bool ray_triangle_intersect(Ray ray, Vec3 u, Vec3 v, Vec3 w, float *t, fl
 	qvec = vec3_cross(tvec, edge1);
 	*c = vec3_dot(ray.direction, qvec) / det;
 	if (*c < 0.0 || *c + *b > 1.0)
-		return false;
+		return 0;
 
 	*t = vec3_dot(edge2, qvec) / det;
 	*a = 1.0 - *b - *c;
 
-	return true;
+	return 1;
 }
 
-static bool ray_mesh_intersect(Ray ray, Mesh *mesh, float *t, Vec3 *normal)
+static int ray_mesh_intersect(Ray ray, Mesh *mesh, float *t, Vec3 *normal)
 {
 	float tt;
 	float a, b, c;
@@ -278,24 +286,27 @@ static bool ray_mesh_intersect(Ray ray, Mesh *mesh, float *t, Vec3 *normal)
 		}
 	}
 	if (*t < HUGE_VAL)
-		return true;
-	return false;
+		return 1;
+	return 0;
 }
 
 
 static bool ray_surface_intersect(Ray ray, Surface *surf, Hit *hit)
 {
-	float t[2] = {-HUGE_VAL, -HUGE_VAL};
-	Vec3 tnormal[2];
+	float ts[2] = {-HUGE_VAL, -HUGE_VAL}, t;
+	Vec3 tnormals[2], tnormal;
 	Ray tray;
 	Vec4 o4, d4;
-	double *m2w;
-	bool intersect;
+	Mat4 normal_matrix;
+	Shape *shape = surf->shape;
+	int hits;
+
+	mat4_copy(normal_matrix, surf->world_to_model);
+	mat4_transpose(normal_matrix);
 
 	o4 = vec4_from_vec3(ray.origin,    1.0);
 	d4 = vec4_from_vec3(ray.direction, 0.0);
 
-	m2w = surf->model_to_world;
 	o4 = mat4_transform(surf->world_to_model, o4);
 	d4 = mat4_transform(surf->world_to_model, d4);
 
@@ -304,96 +315,73 @@ static bool ray_surface_intersect(Ray ray, Surface *surf, Hit *hit)
 	tray.direction.y = d4.y;
 	tray.direction.z = d4.z;
 
-	switch(surf->shape->type)
+	switch(shape->type)
 	{
 	case SHAPE_SPHERE:
-		intersect = ray_sphere_intersect(tray, surf->shape->u.sphere, t, tnormal);
-		if (intersect)
-		{
-			if (t[0] < 0 && t[1] < 0)
-			{
-				intersect = false;
-				break;
-			}
-			else if (t[0] > 0 && t[1] < 0)
-			{
-				hit->t = t[0];
-				hit->normal = tnormal[0];
-			}
-			else if (t[1] > 0 && t[0] < 0)
-			{
-				hit->t = t[1];
-				hit->normal = tnormal[1];
-			}
-			else
-			{
-				hit->t = MIN(t[0], t[1]);
-				if (t[0] < t[1])
-				{
-					hit->normal = tnormal[0];
-				} else
-				{
-					hit->normal = tnormal[1];
-				}
-			}
-
-			hit->position = vec3_add(ray.origin,
-					vec3_scale(hit->t, ray.direction));
-			return true;
-		}
+		hits = ray_sphere_intersect(tray, shape->u.sphere, ts, tnormals);
 		break;
 	case SHAPE_CYLINDER:
-		if (ray_cylinder_intersect(tray, surf->shape->u.cylinder, t, tnormal))
-		{
-			if (t[0] < t[1])
-			{
-				hit->t = t[0];
-				hit->normal = mat4_transform3(m2w, tnormal[0]);
-			} else
-			{
-				hit->t = t[1];
-				hit->normal = mat4_transform3(m2w, tnormal[1]);
-			}
-			hit->position = vec3_add(ray.origin,
-					vec3_scale(hit->t, ray.direction));
-			return true;
-		}
+		hits = ray_cylinder_intersect(tray, shape->u.cylinder, ts, tnormals);
 		break;
 	case SHAPE_CONE:
-		if (ray_cone_intersect(ray, surf->shape->u.cone, t, tnormal))
-		{
-			if (t[0] < t[1])
-			{
-				hit->t = t[0];
-				hit->normal = mat4_transform3(m2w, tnormal[0]);
-			}
-			else
-			{
-				hit->t = t[1];
-				hit->normal = mat4_transform3(m2w, tnormal[1]);
-			}
-			hit->position = vec3_add(ray.origin,
-					vec3_scale(hit->t, ray.direction));
-			return true;
-		}
+		hits = ray_cone_intersect(tray, shape->u.cone, ts, tnormals);
 		break;
 	case SHAPE_MESH:
-		if (ray_mesh_intersect(ray, surf->shape->u.mesh, t, tnormal))
-		{
-			hit->t = t[0];
-			hit->normal = mat4_transform3(m2w, tnormal[0]);
-			hit->position = vec3_add(ray.origin,
-					vec3_scale(hit->t, ray.direction));
-			return true;
-		}
+		hits = ray_mesh_intersect(tray, shape->u.mesh, ts, tnormals);
 		break;
 	default:
+		hits = 0;
 		assert("Unknown shape" == 0);
 		return false;
 		break;
 	}
 
-	return false;
+	if (hits == 0)
+		return false;
+	if (hits == 1)
+	{
+		if (ts[0] < ray.near || ts[0] > ray.far)
+			return false;
+
+		t = ts[0];
+		tnormal = tnormals[0];
+	} else if (hits == 2)
+	{
+		float near = ray.near;
+		float far = ray.far;
+
+		     if ( (ts[0] < near || ts[0] > far) &&  (ts[1] < near || ts[1] > far))
+		{
+			return false;
+		}
+		else if (!(ts[0] < near || ts[0] > far) &&  (ts[1] < near || ts[1] > far))
+		{
+			t = ts[0];
+			tnormal = tnormals[0];
+		}
+		else if ( (ts[0] < near || ts[0] > far) && !(ts[1] < near || ts[1] > far))
+		{
+			t = ts[1];
+			tnormal = tnormals[1];
+		}
+		else
+		{
+			if (ts[0] < ts[1])
+			{
+				t = ts[0];
+				tnormal = tnormals[0];
+			} else
+			{
+				t = ts[1];
+				tnormal = tnormals[1];
+			}
+		}
+	}
+
+	hit->t = t;
+	hit->position = vec3_add(ray.origin, vec3_scale(t, ray.direction));
+	hit->normal = vec3_normalize(mat4_transform3(normal_matrix, tnormal));
+	return true;
 }
 
 bool ray_intersect(Ray ray, Hit *hit)
@@ -402,6 +390,7 @@ bool ray_intersect(Ray ray, Hit *hit)
 	Surface *surface = scene->root;
 
 	hit->surface = NULL;
+	hit->t = HUGE_VAL;
 
 	while (surface)
 	{
@@ -479,11 +468,13 @@ static Colour hit_colour(Hit *hit, Material *mat)
 
 		light_dir = vec3_normalize(vec3_sub(light->position, hit->position));
 
-		if (mat->type == MATERIAL_DIFFUSE || mat->type == MATERIAL_PHONG)
+		//if (mat->type == MATERIAL_DIFFUSE || mat->type == MATERIAL_PHONG)
 		{
 			shadow_ray.direction = light_dir;
 			shadow_ray.origin = vec3_add(hit->position,
 					vec3_scale(1e-3, shadow_ray.direction));
+			shadow_ray.near = 0;
+			shadow_ray.far = vec3_length(vec3_sub(light->position, hit->position));
 			if (ray_intersect(shadow_ray, &dummy))
 				continue;
 		}

@@ -155,18 +155,18 @@
 	texture						IDREF			#IMPLIED
 >
 
-<!ELEMENT Rotate ((Shape|Rotate|Translate|Scale)+)>
+<!ELEMENT Rotate ((Shape|Rotate|Translate|Scale)*)>
 <!ATTLIST Rotate
 	axis						CDATA			#REQUIRED
 	angle						CDATA			#REQUIRED
 >
 
-<!ELEMENT Translate ((Shape|Rotate|Translate|Scale)+)>
+<!ELEMENT Translate ((Shape|Rotate|Translate|Scale)*)>
 <!ATTLIST Translate
 	vector						CDATA			#REQUIRED
 >
 
-<!ELEMENT Scale ((Shape|Rotate|Translate|Scale)+)>
+<!ELEMENT Scale ((Shape|Rotate|Translate|Scale)*)>
 <!ATTLIST Scale
 	scale						CDATA			#REQUIRED
 >

@@ -81,8 +81,10 @@ typedef struct Sdl {
 	int num_materials;
 	Material *material;
 
-	Scene scene;
+	Scene DUMMY_scene;
 } Sdl;
+
+const Scene *scene;
 
 Sdl *sdl_load(const char *filename);
 

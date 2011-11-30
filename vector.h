@@ -23,8 +23,9 @@ double vec3_length(Vec3 a);
 Vec3 vec3_normalize(Vec3 a);
 Vec3 vec3_cross(Vec3 a, Vec3 b);
 Vec3 vec3_lerp(Vec3 a, Vec3 b, double t);
+Vec3 vec3_reflect(Vec3 d, Vec3 n);
 Vec4 vec4_from_vec3(Vec3, double w);
-Vec4 vec4_project(Vec4 v);
+Vec3 vec4_project(Vec4 v);
 Vec3 vec3_from_vec4(Vec4 v);
 
 #endif

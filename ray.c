@@ -2,6 +2,8 @@
 #include <math.h>
 #include "ray.h"
 
+static int depth;
+
 Ray camera_ray(Camera *cam, int nx, int ny, int i, int j, double near)
 {
 	float d, u, v;
@@ -25,7 +27,7 @@ Ray camera_ray(Camera *cam, int nx, int ny, int i, int j, double near)
 	return r;
 }
 
-static bool ray_sphere_intersect(Ray r, Sphere sph, float t[2])
+static bool ray_sphere_intersect(Ray r, Sphere sph, float t[2], Vec3 normal[2])
 {
 	Vec3 v;
 	float dd, vd, vv, discriminant;
@@ -42,6 +44,9 @@ static bool ray_sphere_intersect(Ray r, Sphere sph, float t[2])
 
 	t[0] = (-vd - sqrtf(discriminant))/dd;
 	t[1] = (-vd + sqrtf(discriminant))/dd;
+
+	normal[0] = vec3_normalize(vec3_add(r.origin, vec3_scale(t[0], r.direction)));
+	normal[1] = vec3_normalize(vec3_add(r.origin, vec3_scale(t[1], r.direction)));
 
 	return true;
 }
@@ -281,13 +286,28 @@ static bool ray_mesh_intersect(Ray ray, Mesh *mesh, float *t, Vec3 *normal)
 static bool ray_surface_intersect(Ray ray, Surface *surf, Hit *hit)
 {
 	float t[2] = {-HUGE_VAL, -HUGE_VAL};
-	Vec3 normal[2];
+	Vec3 tnormal[2];
+	Ray tray;
+	Vec4 o4, d4;
+	double *m2w;
 	bool intersect;
+
+	o4 = vec4_from_vec3(ray.origin,    1.0);
+	d4 = vec4_from_vec3(ray.direction, 0.0);
+
+	m2w = surf->model_to_world;
+	o4 = mat4_transform(surf->world_to_model, o4);
+	d4 = mat4_transform(surf->world_to_model, d4);
+
+	tray.origin = vec4_project(o4);
+	tray.direction.x = d4.x;
+	tray.direction.y = d4.y;
+	tray.direction.z = d4.z;
 
 	switch(surf->shape->type)
 	{
 	case SHAPE_SPHERE:
-		intersect = ray_sphere_intersect(ray, surf->shape->u.sphere, t);
+		intersect = ray_sphere_intersect(tray, surf->shape->u.sphere, t, tnormal);
 		if (intersect)
 		{
 			if (t[0] < 0 && t[1] < 0)
@@ -296,29 +316,43 @@ static bool ray_surface_intersect(Ray ray, Surface *surf, Hit *hit)
 				break;
 			}
 			else if (t[0] > 0 && t[1] < 0)
+			{
 				hit->t = t[0];
+				hit->normal = tnormal[0];
+			}
 			else if (t[1] > 0 && t[0] < 0)
+			{
 				hit->t = t[1];
+				hit->normal = tnormal[1];
+			}
 			else
+			{
 				hit->t = MIN(t[0], t[1]);
+				if (t[0] < t[1])
+				{
+					hit->normal = tnormal[0];
+				} else
+				{
+					hit->normal = tnormal[1];
+				}
+			}
 
 			hit->position = vec3_add(ray.origin,
 					vec3_scale(hit->t, ray.direction));
-			hit->normal = vec3_normalize(hit->position);
 			return true;
 		}
 		break;
 	case SHAPE_CYLINDER:
-		if (ray_cylinder_intersect(ray, surf->shape->u.cylinder, t, normal))
+		if (ray_cylinder_intersect(tray, surf->shape->u.cylinder, t, tnormal))
 		{
 			if (t[0] < t[1])
 			{
 				hit->t = t[0];
-				hit->normal = normal[0];
+				hit->normal = mat4_transform3(m2w, tnormal[0]);
 			} else
 			{
 				hit->t = t[1];
-				hit->normal = normal[1];
+				hit->normal = mat4_transform3(m2w, tnormal[1]);
 			}
 			hit->position = vec3_add(ray.origin,
 					vec3_scale(hit->t, ray.direction));
@@ -326,17 +360,17 @@ static bool ray_surface_intersect(Ray ray, Surface *surf, Hit *hit)
 		}
 		break;
 	case SHAPE_CONE:
-		if (ray_cone_intersect(ray, surf->shape->u.cone, t, normal))
+		if (ray_cone_intersect(ray, surf->shape->u.cone, t, tnormal))
 		{
 			if (t[0] < t[1])
 			{
 				hit->t = t[0];
-				hit->normal = normal[0];
+				hit->normal = mat4_transform3(m2w, tnormal[0]);
 			}
 			else
 			{
 				hit->t = t[1];
-				hit->normal = normal[1];
+				hit->normal = mat4_transform3(m2w, tnormal[1]);
 			}
 			hit->position = vec3_add(ray.origin,
 					vec3_scale(hit->t, ray.direction));
@@ -344,11 +378,12 @@ static bool ray_surface_intersect(Ray ray, Surface *surf, Hit *hit)
 		}
 		break;
 	case SHAPE_MESH:
-		if (ray_mesh_intersect(ray, surf->shape->u.mesh, t, normal))
+		if (ray_mesh_intersect(ray, surf->shape->u.mesh, t, tnormal))
 		{
 			hit->t = t[0];
-			hit->normal = normal[0];
-			hit->position = vec3_add(ray.origin, vec3_scale(hit->t, ray.direction));
+			hit->normal = mat4_transform3(m2w, tnormal[0]);
+			hit->position = vec3_add(ray.origin,
+					vec3_scale(hit->t, ray.direction));
 			return true;
 		}
 		break;
@@ -361,7 +396,7 @@ static bool ray_surface_intersect(Ray ray, Surface *surf, Hit *hit)
 	return false;
 }
 
-bool ray_intersect(Ray ray, Scene *scene, Hit *hit)
+bool ray_intersect(Ray ray, Hit *hit)
 {
 	Hit testhit;
 	Surface *surface = scene->root;
@@ -391,29 +426,77 @@ bool ray_intersect(Ray ray, Scene *scene, Hit *hit)
  * Shading *
  ***********/
 
-static Colour hit_colour(Hit *hit, Vec3 cam_pos, int n, Light **lights,
-		Material *mat)
+static Colour hit_light_colour(Hit *hit, Light *light, Material *mat, Vec3 cam_dir,
+		Vec3 light_dir, Vec3 normal)
+{
+	Colour final, col1, col2;
+	Ray rray;
+
+	switch(mat->type)
+	{
+	case MATERIAL_DIFFUSE:
+		return diff_colour(light, mat, cam_dir, light_dir, normal);
+		break;
+	case MATERIAL_PHONG:
+		return spec_colour(light, mat, cam_dir, light_dir, normal);
+		break;
+	case MATERIAL_COMBINED:
+		col1 = hit_light_colour(hit, light, mat->mat1, cam_dir, light_dir, normal);
+		col2 = hit_light_colour(hit, light, mat->mat2, cam_dir, light_dir, normal);
+		final = colour_add(
+				colour_scale(mat->weight1, col1),
+				colour_scale(mat->weight2, col2));
+		break;
+	case MATERIAL_GLOSSY:
+		rray.direction = vec3_reflect(vec3_scale(-1, cam_dir), normal);
+		rray.origin = vec3_add(hit->position, vec3_scale(1e-3, rray.direction));
+		final = ray_colour(rray, 2);
+		break;
+	default:
+		assert("Unknown material!" == NULL);
+	}
+
+	return final;
+}
+
+static Colour hit_colour(Hit *hit, Material *mat)
 {
 	Colour total;
+	int n = scene->num_lights;
+	Vec3 cam_pos, cam_dir;
+
+	cam_pos = scene->camera->position;
+	cam_dir = vec3_normalize(vec3_sub(cam_pos, hit->position));
 
 	total = BLACK;
 	for (int i = 0; i < n; i++)
 	{
-		Light *light = lights[i];
-		Vec3 cam_dir, light_dir;
+		Light *light = scene->light[i];
+		Vec3 light_dir;
 		Colour new;
+		Ray shadow_ray;
+		Hit dummy;
 
-		cam_dir = vec3_normalize(vec3_sub(cam_pos, hit->position));
 		light_dir = vec3_normalize(vec3_sub(light->position, hit->position));
 
-		new = light_mat_colour(light, mat, cam_dir, light_dir, hit->normal);
+		if (mat->type == MATERIAL_DIFFUSE || mat->type == MATERIAL_PHONG)
+		{
+			shadow_ray.direction = light_dir;
+			shadow_ray.origin = vec3_add(hit->position,
+					vec3_scale(1e-3, shadow_ray.direction));
+			if (ray_intersect(shadow_ray, &dummy))
+				continue;
+		}
+
+		new = hit_light_colour(hit, light, mat, cam_dir, light_dir,
+				hit->normal);
 		total = colour_add(total, new);
 	}
 
 	return total;
 }
 
-Colour ray_colour(Ray ray, Scene *scene, int ttl)
+Colour ray_colour(Ray ray, int ttl)
 {
 	Hit hit;
 	bool ray_hit;
@@ -421,15 +504,17 @@ Colour ray_colour(Ray ray, Scene *scene, int ttl)
 
 	/* Early exit */
 	if (ttl <= 0)
+	{
+		printf("TTL ran out\n");
 		return scene->background;
+	}
 
-	ray_hit = ray_intersect(ray, scene, &hit);
+	ray_hit = ray_intersect(ray, &hit);
 
 	if (!ray_hit)
 		return scene->background;
 
 	mat = hit.surface->material;
 
-	return hit_colour(&hit, scene->camera->position, scene->num_lights,
-			scene->light, mat);
+	return hit_colour(&hit, mat);
 }

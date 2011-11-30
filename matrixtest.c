@@ -15,7 +15,7 @@ int main(int argc, char **argv)
 	if (sdl == NULL)
 		return 1;
 
-	surface = sdl->scene.root;
+	surface = scene->root;
 	while (surface)
 	{
 		Mat4 prod;

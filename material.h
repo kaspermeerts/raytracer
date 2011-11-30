@@ -22,7 +22,7 @@ typedef struct Texture {
 } Texture;
 
 typedef struct Material {
-	enum { MATERIAL_DIFFUSE, MATERIAL_PHONG, MATERIAL_COMBINED } type;
+	enum { MATERIAL_DIFFUSE, MATERIAL_PHONG, MATERIAL_COMBINED, MATERIAL_GLOSSY } type;
 	Colour colour;
 	int shininess;
 	float weight1;

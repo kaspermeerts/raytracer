@@ -4,9 +4,9 @@
 <Sdl>
    <Cameras>
       <Camera position="5 5 5" direction="-1 -1 -1" up="0 1 0" fovy="45"
-	  		width="512" height="512" name="cam0" />
+	  		width="1024" height="1024" name="cam0" />
       <Camera position="0 0 5" direction=" 0  0 -1" up="0 1 0" fovy="45"
-	  		width="256" height="256" name="cam1" />
+	  		width="1000" height="1000" name="cam1" />
    </Cameras>
 
    <Lights>

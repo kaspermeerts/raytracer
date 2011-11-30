@@ -17,6 +17,6 @@ typedef struct Hit {
 } Hit;
 
 Ray camera_ray(Camera *cam, int nx, int ny, int i, int j, double near);
-bool ray_intersect(Ray ray, Scene *scene, Hit *hit);
-Colour ray_colour(Ray ray, Scene *scene, int ttl);
+bool ray_intersect(Ray ray, Hit *hit);
+Colour ray_colour(Ray ray, int ttl);
 #endif

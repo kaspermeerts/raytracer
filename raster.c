@@ -14,7 +14,7 @@ Raster *raster_new(int width, int height)
 	raster->buffer = calloc(width*height, sizeof(Colour));
 	raster->zbuffer = calloc(width*height, sizeof(raster->zbuffer[0]));
 	for (int i = 0; i < width*height; i++)
-		raster->zbuffer[i] = HUGE_VAL;
+		raster->zbuffer[i] = -HUGE_VAL;
 
 	return raster;
 }
@@ -34,6 +34,19 @@ bool raster_pixel(Raster *raster, int x, int y, Colour c)
 	raster->buffer[raster->width*y + x] = c;
 
 	return true;
+}
+
+bool raster_z_pixel(Raster *raster, int x, int y, float z)
+{
+	if (x < 0 || x >= raster->width || y < 0 || y >= raster->width)
+		return false;
+
+	if (raster->zbuffer[raster->width*y + x] < z)
+	{
+		raster->zbuffer[raster->width*y + x] = z;
+		return true;
+	} else
+		return false;
 }
 
 /* Bresenham's line algorithm. */

@@ -8,18 +8,33 @@
 #include "ray.h"
 #include "ppm.h"
 
-/* TODO: Put in config structure */
-const int WIDTH =  512;
-const int HEIGHT = 512;
+static void print_progressbar(int progress, int total)
+{
+	int bars;
+	const int tot_bars = 70;
+
+	bars = (progress * tot_bars)/total;
+
+	printf("\r");
+	printf("[");
+	for (int i = 0; i < bars; i++)
+		printf("=");
+	printf(">");
+	for (int i = bars + 1; i <= tot_bars; i++)
+		printf(" ");
+	printf("]");
+	printf("\r");
+
+}
 
 int main(int argc, char **argv)
 {
 	Sdl *sdl;
-	Scene *scene;
 	FILE *out;
 	Colour *buffer;
 	clock_t start, stop;
 	double ms;
+	int width, height;
 
 	if (argc < 2)
 		return 1;
@@ -27,15 +42,17 @@ int main(int argc, char **argv)
 	sdl = sdl_load(argv[1]);
 	if (sdl == NULL)
 		return 1;
-	scene = &sdl->scene;
 
-	buffer = calloc(WIDTH*HEIGHT, sizeof(Colour));
+	width = scene->camera->width;
+	height = scene->camera->height;
+	buffer = calloc(width*height, sizeof(Colour));
 
 	/* START */
 	start = clock();
 
-	for (int j = 0; j < HEIGHT; j++)
-	for (int i = 0; i < WIDTH; i++) /* Indentation doesn't help readability */
+	for (int j = 0; j < height; j++)
+	{
+	for (int i = 0; i < width; i++) /* Indentation doesn't help readability */
 	{
 		Camera *cam = scene->camera;
 		Colour c;
@@ -43,12 +60,15 @@ int main(int argc, char **argv)
 
 		/* The last parameter is the near plane, which is irrelevant for
 		 * the moment. */
-		r = camera_ray(cam, WIDTH, HEIGHT, i, j, 1);
+		r = camera_ray(cam, width, height, i, j, 1);
 
-		c = ray_colour(r, &sdl->scene, 10);
+		c = ray_colour(r, 10);
 
-		buffer[WIDTH*j + i] = c;
+		buffer[width*j + i] = c;
 	}
+	print_progressbar(j, height - 1);
+	}
+	printf("\n");
 
 	/* STOP */
 	stop = clock();
@@ -57,10 +77,10 @@ int main(int argc, char **argv)
 	printf("Rendering complete in %d s %03d ms\n", (int) ms/1000, 
 			(int) (ms - floor(ms/1000)*1000) );
 	printf("%.2f kilopixels per second\n", 
-			(WIDTH*HEIGHT/1000.0/(ms/1000.0)));
+			(width*height/1000.0/(ms/1000.0)));
 
 	out = fopen("ray.ppm", "w");
-	ppm_write(buffer, WIDTH, HEIGHT, out);
+	ppm_write(buffer, width, height, out);
 	free(buffer);
 	fclose(out);
 

@@ -68,6 +68,12 @@ Vec3 vec3_lerp(Vec3 a, Vec3 b, double t)
 	return c;
 }
 
+Vec3 vec3_reflect(Vec3 d, Vec3 n)
+{
+	/* d - 2(d.n)n */
+	return vec3_add(d, vec3_scale(-2*vec3_dot(d,n),n));
+}
+
 Vec4 vec4_from_vec3(Vec3 v3, double w)
 {
 	Vec4 v4;
@@ -79,16 +85,15 @@ Vec4 vec4_from_vec3(Vec3 v3, double w)
 	return v4;
 }
 
-Vec4 vec4_project(Vec4 v)
+Vec3 vec4_project(Vec4 v)
 {
-	Vec4 v4;
+	Vec3 v3;
 
-	v4.x = v.x / v.w;
-	v4.y = v.y / v.w;
-	v4.z = v.z / v.w;
-	v4.w = 1;
+	v3.x = v.x / v.w;
+	v3.y = v.y / v.w;
+	v3.z = v.z / v.w;
 
-	return v4;
+	return v3;
 }
 
 Vec3 vec3_from_vec4(Vec4 v4)

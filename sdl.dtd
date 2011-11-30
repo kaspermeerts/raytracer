@@ -110,7 +110,7 @@
 >
 
 
-<!ELEMENT Materials ((DiffuseMaterial|PhongMaterial|LinearCombinedMaterial)*)>
+<!ELEMENT Materials ((DiffuseMaterial|PhongMaterial|LinearCombinedMaterial|GlossyMaterial)*)>
 <!ATTLIST Materials>
 
 <!ELEMENT DiffuseMaterial EMPTY>
@@ -133,6 +133,12 @@
 	material2					IDREF			#REQUIRED
 	weight2						CDATA			"0.5"
 	name						ID				#REQUIRED	
+>
+
+<!ELEMENT GlossyMaterial EMPTY>
+<!ATTLIST GlossyMaterial
+	color						CDATA			#REQUIRED
+	name						ID				#REQUIRED
 >
 
 <!ELEMENT Scene ((Shape|Rotate|Translate|Scale)+)>

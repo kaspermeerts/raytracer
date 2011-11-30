@@ -3,38 +3,54 @@
 
 <Sdl>
    <Cameras>
-      <Camera position="5 0 0" direction="-1 0 0" up="0 0 1" fovy="45" width="512" height="512" name="cam0" />
+      <Camera position="0 7 0" direction="0 -1 0" up="0 0 1" fovy="45"
+	  		width="512" height="512" name="cam0" />
    </Cameras>
 
    <Lights>
-      <PointLight position="0 5 0" intensity="1" color="1 1 1" name="light0" />
-	  <PointLight position="0 2 2" intensity="1" color="1 1 0" name="light1" />
+      <PointLight position="1 9 1" intensity="1" color="1 1 1" name="light0" />
+	  <PointLight position="1 5 5" intensity="1" color="1 1 0" name="light1" />
    </Lights>
 
    <Geometry>
 	   <Cylinder radius="1" height="2" capped="true" name="cyl0" />
-	   <Sphere radius="0.6" name="sph0" />
+	   <Sphere radius="1" name="sph0" />
 	   <Cone radius="1" height="2" capped="false" name="con0" />
 	   <Torus innerRadius="1" outerRadius="2" name="tor0" />
 	   <Mesh src="torus.obj" name="mesh0" />
    </Geometry>
 
    <Materials>
+	  <DiffuseMaterial color="0.1 0.0 0.2" name="red" />
       <DiffuseMaterial color="0.75 0.75 1" name="dif0" />
       <PhongMaterial color="1 1 1" shininess="400" name="pho0" />
       <LinearCombinedMaterial material1="dif0" weight1="1"
 	                          material2="pho0" weight2="1"
 							  name="lc0" />
+	  <GlossyMaterial color="1 1 1" name="mirror" />
+	  <LinearCombinedMaterial material1="dif0"   weight1="0.0"
+	                          material2="mirror" weight2="1.0"
+							  name="lcmirror"/>
    </Materials>
 
-	<Scene camera="cam0" lights="light0" background="0.3 0.3 0.3">
-		<Rotate axis="5 0 1" angle="45" >
-			<Translate vector="1 -6 9">
-				<Rotate axis="1 0 0" angle="15">
-					<Shape geometry="sph0" material="dif0" />
-					<Shape geometry="cyl0" material="dif0" />
-				</Rotate>
-			</Translate>
-		</Rotate>
+	<Scene camera="cam0" lights="light0,light1" background="0.3 0.3 0.3">
+		<Translate vector="0 0 0">
+		<Translate vector="2 0 2">
+			<Shape geometry="sph0" material="lc0" />
+		</Translate>
+		<Translate vector="-2 0 2">
+			<Shape geometry="sph0" material="lc0" />
+		</Translate>
+		<Translate vector="2 0 -2">
+			<Shape geometry="sph0" material="lc0" />
+		</Translate>
+		<Translate vector="0 0 0">
+			<Shape geometry="sph0" material="lcmirror" />
+		</Translate>
+		<Translate vector="-2 0 -2">
+			<Shape geometry="sph0" material="lcmirror" />
+		</Translate>
+
+		</Translate>
 	</Scene>
 </Sdl>

@@ -23,6 +23,7 @@ void matstack_destroy(MatrixStack *matstack);
 void matstack_pop(MatrixStack *stack);
 void matstack_push(MatrixStack *stack);
 Vec4 mat4_transform(Mat4 m, Vec4 v);
+Vec3 mat4_transform3(Mat4 m, Vec3 v);
 void mat4_print(Mat4 m);
 void mat4_copy(Mat4 dst, Mat4 src);
 void mat4_mult(Mat4 c, Mat4 a, Mat4 b);

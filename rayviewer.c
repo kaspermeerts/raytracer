@@ -73,7 +73,6 @@ static void put_pixel(SDL_Surface *surface, int x, int y, Colour c)
 int main(int argc, char **argv)
 {
 	Sdl *sdl;
-	Scene *scene;
 	FILE *out;
 	Colour *buffer;
 	clock_t start, stop;
@@ -90,7 +89,6 @@ int main(int argc, char **argv)
 	sdl = sdl_load(argv[1]);
 	if (sdl == NULL)
 		return 1;
-	scene = &sdl->scene;
 
 	buffer = calloc(WIDTH*HEIGHT, sizeof(Colour));
 
@@ -109,7 +107,7 @@ int main(int argc, char **argv)
 		 * the moment. */
 		r = camera_ray(cam, WIDTH, HEIGHT, i, j, 1);
 
-		c = ray_colour(r, &sdl->scene, 10);
+		c = ray_colour(r, 10);
 
 		buffer[WIDTH*j + i] = c;
 		put_pixel(display_surface, i, j, c);

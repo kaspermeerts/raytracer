@@ -260,7 +260,7 @@ static bool import_materials(Sdl *sdl, xmlNode *node, int n)
 			mat->type = MATERIAL_PHONG;
 			mat->colour = parse_colour(xmlGetProp(cur_node, "color"));
 			mat->shininess = parse_double(xmlGetProp(cur_node, "shininess"));
-		} else
+		} else if (strcmp(cur_node->name, "LinearCombinedMaterial") == 0)
 		{
 			const char *mat1_name, *mat2_name;
 			int j;
@@ -289,7 +289,16 @@ static bool import_materials(Sdl *sdl, xmlNode *node, int n)
 					mat2_name);
 				return false;
 			}
+		} else if (strcmp(cur_node->name, "GlossyMaterial") == 0)
+		{
+			mat->type = MATERIAL_GLOSSY;
+			mat->colour = parse_colour(xmlGetProp(cur_node, "color"));
+		} else
+		{
+			printf("Unknown material type: \"%s\"\n", cur_node->name);
+			return false;
 		}
+
 		mat->name = strdup(xmlGetProp(cur_node, "name"));
 	}
 
@@ -300,11 +309,11 @@ static bool import_light_refs(Sdl *sdl, const char *light_names)
 {
 	int i;
 	const char *name, *end;
-	Scene *scene = &sdl->scene;
+	Scene *rw_scene = &sdl->DUMMY_scene;
 
 	if (*light_names == '\0')
 	{
-		scene->num_lights = 0;
+		rw_scene->num_lights = 0;
 		return true;
 	}
 
@@ -312,11 +321,11 @@ static bool import_light_refs(Sdl *sdl, const char *light_names)
 	for (name = light_names; *name; name++)
 		if (*name == ',')
 			i++;
-	scene->num_lights = i;
+	rw_scene->num_lights = i;
 
-	if (scene->num_lights > MAX_LIGHTS)
+	if (rw_scene->num_lights > MAX_LIGHTS)
 	{
-		printf("Too many lights: %d\n", scene->num_lights);
+		printf("Too many lights: %d\n", rw_scene->num_lights);
 		return false;
 	}
 
@@ -327,11 +336,11 @@ static bool import_light_refs(Sdl *sdl, const char *light_names)
 		end++;
 		if (*end == ',' || *end == '\0')
 		{
-			scene->light[i] = NULL;
+			rw_scene->light[i] = NULL;
 			for (int j = 0; j < sdl->num_lights; j++)
 				if (strncmp(sdl->light[j].name, name, end - name) == 0)
-					scene->light[i] = &sdl->light[j];
-			if (scene->light[i] == NULL)
+					rw_scene->light[i] = &sdl->light[j];
+			if (rw_scene->light[i] == NULL)
 			{
 				printf("Couldn't find light %d of %s\n", i, light_names);
 				return false;
@@ -438,7 +447,7 @@ static bool import_graph(Sdl *sdl, Surface **root, xmlNode *xml_node,
 
 static bool import_scene(Sdl *sdl, xmlNode *node, int n)
 {
-	Scene *scene = &sdl->scene;
+	Scene *rw_scene = &sdl->DUMMY_scene;
 	int i;
 	const char *cam_name, *light_names;
 	MatrixStack *model_matrix;
@@ -452,12 +461,12 @@ static bool import_scene(Sdl *sdl, xmlNode *node, int n)
 		return false;
 	}
 	cam_name = xmlGetProp(node, "camera");
-	scene->camera = NULL;
+	rw_scene->camera = NULL;
 	for (i = 0; i < sdl->num_cameras; i++)
 		if (strcmp(sdl->camera[i].name, cam_name) == 0)
-			scene->camera = &sdl->camera[i];
+			rw_scene->camera = &sdl->camera[i];
 
-	if (scene->camera == NULL)
+	if (rw_scene->camera == NULL)
 	{
 		printf("Requested camera \"%s\" not found\n", cam_name);
 		return false;
@@ -474,7 +483,7 @@ static bool import_scene(Sdl *sdl, xmlNode *node, int n)
 		return false;
 
 	/* Background */
-	scene->background = parse_colour(xmlGetProp(node, "background"));
+	rw_scene->background = parse_colour(xmlGetProp(node, "background"));
 
 	/* The actual scene */
 	model_matrix = matstack_new();
@@ -482,8 +491,8 @@ static bool import_scene(Sdl *sdl, xmlNode *node, int n)
 	mat4_identity(model_matrix->top->matrix);
 	mat4_identity(model_matrix->top->inverse);
 
-	scene->root = NULL;
-	if (!import_graph(sdl, &scene->root, xmlFirstElementChild(node),
+	rw_scene->root = NULL;
+	if (!import_graph(sdl, &rw_scene->root, xmlFirstElementChild(node),
 			model_matrix))
 	{
 		printf("Error importing the scene graph\n");
@@ -492,6 +501,7 @@ static bool import_scene(Sdl *sdl, xmlNode *node, int n)
 	}
 	matstack_destroy(model_matrix);
 
+	scene = &sdl->DUMMY_scene;
 	return true;
 }
 

@@ -13,7 +13,6 @@ typedef struct Camera {
 	Vec3 u, v, w; /* For the raytracer */
 	Quaternion orientation; /* For the rasteriser */
 	float fov;
-	int width, height;
 	char *name;
 } Camera;
 
@@ -81,9 +80,16 @@ typedef struct Sdl {
 	int num_materials;
 	Material *material;
 
-	Scene DUMMY_scene;
+	Scene internal_scene;
 } Sdl;
 
+typedef struct Config {
+	int width;
+	int height;
+	bool antialiasing;
+} Config;
+
+const Config *config;
 const Scene *scene;
 
 Sdl *sdl_load(const char *filename);

@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -6,6 +7,24 @@
 #include "scene.h"
 #include "ppm.h"
 #include "raster.h"
+
+static struct {
+	Vec3 normal;
+	Vec3 light_dir, cam_dir;
+} varying[3];
+
+static struct {
+	Mat4 mv;
+	Mat4 mvp;
+	Mat4 normal_matrix;
+	Vec3 light_pos;
+} uniform;
+
+typedef struct Screen3 {
+	int x;
+	int y;
+	float z;
+} Screen3;
 
 static void tesselate_shape(Shape *shape)
 {
@@ -15,32 +34,86 @@ static void tesselate_shape(Shape *shape)
 		break;
 	default:
 		printf("Cannot tesselate shape \"%s\"\n", shape->name);
+		exit(1);
 		break;
 	}
 
 	shape->type = SHAPE_MESH;
 }
 
-static Colour fragment_shader(Material *mat, Mesh *mesh,
-		Triangle tri, float a, float b, float c)
+/* The third argument gives the index of the vertex of the current triangle */
+static Vec4 vertex_shader(Vec3 position, Vec3 normal, int i)
 {
-	mat = mat;
-	mesh = mesh;
-	tri = tri;
-	a = a;
-	b = b;
-	c = c;
+	Vec3 eye_pos_xyz; /* Position in eye space */
+	Vec3 light_dir;
+	Vec4 eye_pos, homo_pos; /* Homogeneous position vector; */
+	
+	homo_pos = vec4_from_vec3(position, 1.0);
+	eye_pos = mat4_transform(uniform.mv, homo_pos);
+	/* No homogeneous divide necessary, as the modelview matrix holds no
+	 * perspective. */
+	eye_pos_xyz.x = eye_pos.x;
+	eye_pos_xyz.y = eye_pos.y;
+	eye_pos_xyz.z = eye_pos.z;
+	assert(fabs(eye_pos.w - 1.0) < 0.01);
 
-	return mat->diffuse_colour;
+	light_dir = vec3_sub(uniform.light_pos, eye_pos_xyz);
+	varying[i].normal = mat4_transform3(uniform.normal_matrix, normal);
+	varying[i].light_dir = vec3_normalize(light_dir);
+	varying[i].cam_dir = vec3_scale(-1, vec3_normalize(eye_pos_xyz));
+
+	return mat4_transform(uniform.mvp, homo_pos);
 }
 
-static void raster_triangle(Raster *raster, Material *mat, Mesh *mesh,
-		Triangle tri, int x0, int y0, float z0,
-		int x1, int y1, float z1, int x2, int y2, float z2)
+static Screen3 vec3_to_screen3(Vec4 v4)
+{
+	int nx = config->width;
+	int ny = config->height;
+	Vec3 v3;
+	Screen3 coord;
+
+	v3 = vec4_homogeneous_divide(v4);
+
+	coord.x = nx/2*(v3.x + 1) - 0.5;
+	coord.y = ny/2*(v3.y + 1) - 0.5;
+	coord.z = v3.z;
+	return coord;
+}
+
+static Vec3 vec3_interpolate(float a, float b, float c,
+		Vec3 v1, Vec3 v2, Vec3 v3)
+{
+	return vec3_add(vec3_add(
+			vec3_scale(a, v1),
+			vec3_scale(b, v2)),
+			vec3_scale(c, v3));
+}
+
+static Colour fragment_shader(Material *mat, float a, float b, float c)
+{
+	mat = mat;
+	Vec3 L, C, N;
+	Light *light = scene->light[0];
+
+	N = vec3_interpolate(a, b, c, 
+			varying[0].normal, varying[1].normal, varying[2].normal);
+	N = vec3_normalize(N);
+	C = vec3_interpolate(a, b, c, 
+			varying[0].cam_dir, varying[1].cam_dir, varying[2].cam_dir);
+	L = vec3_interpolate(a, b, c, 
+			varying[0].light_dir, varying[1].light_dir, varying[2].light_dir);
+
+	return light_mat_colour(light, mat, L, C, N);
+}
+
+static void raster_triangle(Raster *raster, Material *mat, Screen3 coord[3])
 {
 	int xmin, ymin, xmax, ymax;
 	float fa, fb, fc;
 	float fao, fbo, fco; /* Coefficients for offscreen point */
+	int x0 = coord[0].x, x1 = coord[1].x, x2 = coord[2].x;
+	int y0 = coord[0].y, y1 = coord[1].y, y2 = coord[2].y;
+	float z0 = coord[0].z, z1 = coord[1].z, z2 = coord[2].z;
 
 	xmin = MIN(x0, MIN(x1, x2));
 	ymin = MIN(y0, MIN(y1, y2));
@@ -64,31 +137,26 @@ static void raster_triangle(Raster *raster, Material *mat, Mesh *mesh,
 	{
 		for (int x = xmin; x <= xmax; x++)
 		{
-			float a, b, c;
+			float a, b, c, z;
 			Colour col;
 
 			a = ((y1 - y2)*x + (x2 - x1)*y + x1*y2 - x2*y1)/fa;
 			b = ((y2 - y0)*x + (x0 - x2)*y + x2*y0 - x0*y2)/fb;
 			c = ((y0 - y1)*x + (x1 - x0)*y + x0*y1 - x1*y0)/fc;
 
-			/*
-			col = colour_add(colour_add(
-					colour_scale(a, RED),
-					colour_scale(b, GREEN)),
-					colour_scale(c, BLUE));
-			*/
-			col = RED;
+			z = a*z0 + b*z1 + c*z2;
+
 			if (a >= 0 && b >= 0 && c >= 0)
 			{
+				/*
 				if (a > 0 || fa*fao > 0)
 				if (b > 0 || fb*fbo > 0)
-				if (c > 0 || fc*fco > 0)
+				if (c > 0 || fc*fco > 0)*/
 				{
-					float z;
-					z = a*z0 + b*z1 + c*z2;
 					if (raster_z_pixel(raster, x, y, z))
 					{
-						col = fragment_shader(mat, mesh, tri, a, b, c);
+						col = fragment_shader(mat, a, b, c);
+						//col = colour_scale(z, RED);
 						raster_pixel(raster, x, y, col);
 					}
 				}
@@ -97,60 +165,35 @@ static void raster_triangle(Raster *raster, Material *mat, Mesh *mesh,
 	}
 }
 
-static void rasterise_mesh(Raster *raster, Mesh *mesh, Material *mat, Mat4 mvp)
+static void rasterise_mesh(Raster *raster, Mesh *mesh, Material *mat)
 {
 	for (int i = 0; i < mesh->num_triangles; i++)
 	{
-		Vec4 a4, b4, c4;
-		Vec3 a, b, c;
-		int x0, x1, x2, y0, y1, y2;
-		float z0, z1, z2;
-		int nx, ny;
-		Triangle tri;
+		Vec4 pos[3];
+		Screen3 coord[3];
+		Triangle tri = mesh->triangle[i];
 
-		tri = mesh->triangle[i];
-
-		a4 = vec4_from_vec3(
-		    	mesh->vertex[tri.vertex[0].vertex_index], 1);
-		b4 = vec4_from_vec3(
-		    	mesh->vertex[tri.vertex[1].vertex_index], 1);
-		c4 = vec4_from_vec3(
-				mesh->vertex[tri.vertex[2].vertex_index], 1);
-
-		a4 = mat4_transform(mvp, a4);
-		b4 = mat4_transform(mvp, b4);
-		c4 = mat4_transform(mvp, c4);
-
-		a = vec4_project(a4);
-		b = vec4_project(b4);
-		c = vec4_project(c4);
-
-		nx = raster->width; ny = raster->height;
-		x0 = nx/2*(a.x + 1) - 0.5;
-		x1 = nx/2*(b.x + 1) - 0.5;
-		x2 = nx/2*(c.x + 1) - 0.5;
-
-		y0 = ny/2*(a.y + 1) - 0.5;
-		y1 = ny/2*(b.y + 1) - 0.5;
-		y2 = ny/2*(c.y + 1) - 0.5;
-
-		z0 = a.z;
-		z1 = b.z;
-		z2 = c.z;
+		for (int j = 0; j < 3; j++)
+		{
+			Vec3 vertex = mesh->vertex[tri.vertex[j].vertex_index];
+			Vec3 normal = mesh->normal[tri.vertex[j].normal_index];
+			pos[j] = vertex_shader(vertex, normal, j);
+			coord[j] = vec3_to_screen3(pos[j]);
+		}
 
 #if 0
-		raster_line(raster, x0, y0, x1, y1);
-		raster_line(raster, x1, y1, x2, y2);
-		raster_line(raster, x2, y2, x0, y0);
+		raster_line(raster, coord[0].x, coord[0].y, coord[1].x, coord[1].y);
+		raster_line(raster, coord[1].x, coord[1].y, coord[2].x, coord[2].y);
+		raster_line(raster, coord[2].x, coord[2].y, coord[0].x, coord[0].y);
 #else
-		raster_triangle(raster, mat, mesh, tri, x0, y0, z0, x1, y1, z1, x2, y2, z2);
+		raster_triangle(raster, mat, coord);
 #endif
 	}
 }
 
 static void cam_proj_matrix(const Camera *cam, Mat4 proj, float znear, float zfar)
 {
-	float aspect = ((float) cam->width) / ((float) cam->height);
+	const float aspect = ((float) config->width) / ((float) config->height);
 	mat4_perspective(proj, cam->fov*M_TWO_PI/360., aspect, znear, zfar);
 }
 
@@ -167,9 +210,14 @@ static void cam_view_matrix(const Camera *cam, Mat4 view)
 	mat4_rmul(view, d);
 }
 
+static void cam_view_inv_matrix(const Camera *cam, Mat4 inv_view)
+{
+	mat4_quaternion(inv_view, cam->orientation);
+}
+
 static void rasterise(Raster *raster)
 {
-	Mat4 proj, view, model, mvp;
+	Mat4 proj, view, model, inv_view, inv_model, tmp;
 	Surface *surface = scene->root;
 	assert(surface->shape->type == SHAPE_MESH);
 	Mesh *mesh = surface->shape->u.mesh;
@@ -179,13 +227,37 @@ static void rasterise(Raster *raster)
 	cam_proj_matrix(scene->camera, proj, -1, -100);
 	/* View */
 	cam_view_matrix(scene->camera, view);
+	cam_view_inv_matrix(scene->camera, inv_view);
 	/* Model */
 	mat4_copy(model, surface->model_to_world);
+	mat4_copy(inv_model, surface->world_to_model);
 
-	mat4_identity(mvp);
-	mat4_rmul(mvp, proj);
-	mat4_rmul(mvp, view);
-	mat4_rmul(mvp, model);
+	/* MVP matrix */
+	mat4_identity(tmp);
+	mat4_rmul(tmp, proj);
+	mat4_rmul(tmp, view);
+	mat4_rmul(tmp, model);
+	mat4_copy(uniform.mvp, tmp);
+
+	/* MV matrix */
+	mat4_identity(tmp);
+	mat4_rmul(tmp, view);
+	mat4_rmul(tmp, model);
+	mat4_copy(uniform.mv, tmp);
+
+	/* Normal matrix */
+	mat4_identity(tmp);
+	mat4_lmul(inv_view, tmp);
+	mat4_lmul(inv_model, tmp);
+	mat4_transpose(tmp);
+	mat4_copy(uniform.normal_matrix, tmp);
+
+	/* IMPORTANT: Transform the light position with the view matrix.
+	 * Otherwise, the position will be interpreted as in model space, and thus
+	 * fixed in the reference frame of the object. This will make lighting on an
+	 * object appear static */
+	uniform.light_pos = vec4_homogeneous_divide(mat4_transform(view,
+			vec4_from_vec3(scene->light[0]->position, 1.0)));
 
 #if 0
 	printf("Projection\n");
@@ -194,11 +266,9 @@ static void rasterise(Raster *raster)
 	mat4_print(view);
 	printf("\nModel\n");
 	mat4_print(model);
-	printf("\nmvp\n");
-	mat4_print(mvp);
 #endif
 
-	rasterise_mesh(raster, mesh, surface->material, mvp);
+	rasterise_mesh(raster, mesh, surface->material);
 }
 
 int main(int argc, char **argv)
@@ -206,7 +276,6 @@ int main(int argc, char **argv)
 	Sdl *sdl;
 	Raster *raster;
 	FILE *out;
-	int width, height;
 
 	if (argc < 2)
 	{
@@ -217,13 +286,11 @@ int main(int argc, char **argv)
 	sdl = sdl_load(argv[1]);
 	if (sdl == NULL)
 		return 1;
-	width = scene->camera->width;
-	height = scene->camera->height;
 
 	for (int i = 0; i < sdl->num_shapes; i++)
 		tesselate_shape(&sdl->shape[i]);
 
-	raster = raster_new(width, height);
+	raster = raster_new(config->width, config->height);
 	rasterise(raster);
 
 	out = fopen("raster.ppm", "wb");

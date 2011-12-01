@@ -85,7 +85,7 @@ Vec4 vec4_from_vec3(Vec3 v3, double w)
 	return v4;
 }
 
-Vec3 vec4_project(Vec4 v)
+Vec3 vec4_homogeneous_divide(Vec4 v)
 {
 	Vec3 v3;
 

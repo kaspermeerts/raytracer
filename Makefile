@@ -8,9 +8,9 @@ LDFLAGS = -lm -Lobjreader -lobjreader `xml2-config --libs`
 
 all: rayviewer raytracer rasteriser matrixtest
 
-matrixtest: matrixtest.c $(SOURCES)
+matrixtest: matrixtest.c scene.c matrix.c vector.c quaternion.c mesh.c
 	@echo "	CC matrixtest"
-	@$(CC) -o matrixtest matrixtest.c $(CFLAGS) $(INCFLAGS) $(SOURCES) $(LDFLAGS) -lSDL
+	@$(CC) -o matrixtest matrixtest.c $(CFLAGS) $(INCFLAGS) scene.c matrix.c vector.c quaternion.c mesh.c $(LDFLAGS) -lSDL
 	
 rayviewer: rayviewer.c ray.c $(SOURCES)
 	@echo "	CC rayviewer"

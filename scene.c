@@ -9,6 +9,8 @@
 #include "scene.h"
 #include "mesh.h"
 
+static Config internal_config;
+
 static Vec3 parse_vec3(const char *string)
 {
 	assert(string != NULL);
@@ -54,7 +56,7 @@ static Colour parse_colour(const char *string)
 static bool parse_bool(const char *string)
 {
 	assert(string != NULL);
-	return (strcmp(string, "true") == 0);
+	return (strcmp(string, "true") == 0) || (strcmp(string, "1") == 0);
 }
 
 static char *strdup(const char *string)
@@ -69,6 +71,16 @@ static char *strdup(const char *string)
 	new[len] = '\0';
 
 	return new;
+}
+
+static bool import_config(xmlNode *node)
+{
+	internal_config.width = parse_int(xmlGetProp(node, "width"));
+	internal_config.height = parse_int(xmlGetProp(node, "height"));
+	internal_config.antialiasing = parse_bool(xmlGetProp(node, "antialiasing"));
+
+	config = &internal_config;
+	return true;
 }
 
 static bool import_cameras(Sdl *sdl, xmlNode *node, int n)
@@ -89,8 +101,6 @@ static bool import_cameras(Sdl *sdl, xmlNode *node, int n)
 
 		cam->position = parse_vec3(xmlGetProp(cur_node, "position"));
 		cam->fov = parse_double(xmlGetProp(cur_node, "fovy"));
-		cam->width = parse_int(xmlGetProp(cur_node, "width"));
-		cam->height = parse_int(xmlGetProp(cur_node, "height"));
 		cam->name = strdup(xmlGetProp(cur_node, "name"));
 
 		direction = parse_vec3(xmlGetProp(cur_node, "direction"));
@@ -268,7 +278,7 @@ static bool import_light_refs(Sdl *sdl, const char *light_names)
 {
 	int i;
 	const char *name, *end;
-	Scene *rw_scene = &sdl->DUMMY_scene;
+	Scene *rw_scene = &sdl->internal_scene;
 
 	if (*light_names == '\0')
 	{
@@ -406,7 +416,7 @@ static bool import_graph(Sdl *sdl, Surface **root, xmlNode *xml_node,
 
 static bool import_scene(Sdl *sdl, xmlNode *node, int n)
 {
-	Scene *rw_scene = &sdl->DUMMY_scene;
+	Scene *rw_scene = &sdl->internal_scene;
 	int i;
 	const char *cam_name, *light_names;
 	MatrixStack *model_matrix;
@@ -460,7 +470,7 @@ static bool import_scene(Sdl *sdl, xmlNode *node, int n)
 	}
 	matstack_destroy(model_matrix);
 
-	scene = &sdl->DUMMY_scene;
+	scene = &sdl->internal_scene;
 	return true;
 }
 
@@ -483,7 +493,12 @@ static bool import_sdl(Sdl *sdl, xmlDoc *doc)
 
 		n = xmlChildElementCount(node);
 
-		if (strcmp(node->name, "Cameras") == 0)
+		if (strcmp(node->name, "Config") == 0)
+		{
+			if (!import_config(node))
+				return false;
+		}
+		else if (strcmp(node->name, "Cameras") == 0)
 		{
 			if (!import_cameras(sdl, node, n))
 				return false;

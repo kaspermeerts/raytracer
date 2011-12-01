@@ -1,6 +1,13 @@
 
-<!ELEMENT Sdl (Cameras,Lights,Geometry,Textures?,Materials?,Scene)>
+<!ELEMENT Sdl (Config,Cameras,Lights,Geometry,Textures?,Materials?,Scene)>
 <!ATTLIST Sdl>
+
+<!ELEMENT Config EMPTY>
+<!ATTLIST Config
+	width						CDATA			"512"
+	height						CDATA			"512"
+	antialiasing				CDATA			"true"
+>
 
 <!ELEMENT Cameras (Camera+)>
 <!ATTLIST Cameras>
@@ -11,8 +18,6 @@
 	direction					CDATA			#REQUIRED
 	up							CDATA			#REQUIRED
 	fovy						CDATA			#REQUIRED
-	width						CDATA			#REQUIRED
-	height						CDATA			#REQUIRED
 	name						ID				#REQUIRED
 >
 

@@ -21,7 +21,7 @@ static bool init_SDL(void)
 {
 	int flags;
 	const SDL_VideoInfo *vidinfo;
-	uint32_t rmask, gmask, bmask, amask;
+	uint32_t rmask, gmask, bmask; /*, amask; */
 
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
 	{
@@ -49,7 +49,7 @@ static bool init_SDL(void)
 	rmask = 0x000000FF;
 	gmask = 0x0000FF00;
 	bmask = 0x00FF0000;
-	amask = 0xFF000000;
+	/* amask = 0xFF000000; */
 	blit_surface = SDL_CreateRGBSurface(SDL_SWSURFACE, WIDTH, HEIGHT, 32, rmask, gmask, bmask, 0);
 
 	return true;

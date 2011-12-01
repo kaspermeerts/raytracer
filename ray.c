@@ -311,10 +311,12 @@ static bool ray_surface_intersect(Ray ray, Surface *surf, Hit *hit)
 	o4 = mat4_transform(surf->world_to_model, o4);
 	d4 = mat4_transform(surf->world_to_model, d4);
 
-	tray.origin = vec4_project(o4);
+	tray.origin = vec4_homogeneous_divide(o4);
 	tray.direction.x = d4.x;
 	tray.direction.y = d4.y;
 	tray.direction.z = d4.z;
+	tray.near = ray.near;
+	tray.far = ray.far;
 
 	switch(shape->type)
 	{
@@ -331,8 +333,7 @@ static bool ray_surface_intersect(Ray ray, Surface *surf, Hit *hit)
 		hits = ray_mesh_intersect(tray, shape->u.mesh, ts, tnormals);
 		break;
 	default:
-		hits = 0;
-		assert("Unknown shape" == 0);
+		printf("Unknown shape\n");
 		return false;
 		break;
 	}
@@ -377,6 +378,10 @@ static bool ray_surface_intersect(Ray ray, Surface *surf, Hit *hit)
 				tnormal = tnormals[1];
 			}
 		}
+	} else
+	{
+		printf("General t finding code unimplemented\n");
+		return false;
 	}
 
 	hit->t = t;

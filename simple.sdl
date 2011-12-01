@@ -2,15 +2,20 @@
 <!DOCTYPE Sdl SYSTEM "sdl.dtd">
 
 <Sdl>
+   <Config
+		width = "512"
+		height = "512"
+	/>
+
    <Cameras>
       <Camera position="5 5 5" direction="-1 -1 -1" up="0 1 0" fovy="45"
-	  		width="1024" height="1024" name="cam0" />
-      <Camera position="0 0 5" direction=" 0  0 -1" up="0 1 0" fovy="45"
-	  		width="1000" height="1000" name="cam1" />
+	  		name="cam0" />
+      <Camera position="0 2 5" direction=" 0  0 -1" up="0 1 0" fovy="45"
+	  		name="cam1" />
    </Cameras>
 
    <Lights>
-      <PointLight position="0 3 1" intensity="1" color="1 1 1" name="light0" />
+      <PointLight position="5 5 5" intensity="1" color="1 1 1" name="light0" />
 	  <PointLight position="0 2 2" intensity="1" color="1 1 0" name="light1" />
    </Lights>
 
@@ -21,17 +26,13 @@
    </Geometry>
 
    <Materials>
-      <DiffuseMaterial color="0.75 0.75 1" name="dif0" />
-      <PhongMaterial color="1 1 1" shininess="400" name="pho0" />
-      <LinearCombinedMaterial material1="dif0" weight1="1"
-	                          material2="pho0" weight2="1"
-							  name="lc0" />
+	  <Material diffuse_color="0.75 0.75 1" specular_color="1 1 1" specular_exponent="400" name="mat0" />
    </Materials>
 
 	<Scene camera="cam0" lights="light0" background="0.3 0.3 0.3">
-		<Rotate axis="0 0 1" angle="0" >
+		<Rotate axis="0 1 0" angle="190" >
 			<Translate vector="0 0 0">
-				<Shape geometry="teapot" material="dif0" />
+				<Shape geometry="teapot" material="mat0" />
 			</Translate>
 		</Rotate>
 	</Scene>

@@ -2,9 +2,15 @@
 <!DOCTYPE Sdl SYSTEM "sdl.dtd">
 
 <Sdl>
+   <Config
+   		width = "512"
+		height = "512"
+		antialiasing = "false"
+	/>
+
    <Cameras>
-      <Camera position="-2 3 -2" direction="2 -1 2" up="0 1 0" fovy="45"
-	  		width="512" height="512" name="cam0" />
+      <Camera position="-3 4 -3" direction="3 -4 3" up="0 1 0" fovy="45" 
+	  		name="cam0" />
    </Cameras>
 
    <Lights>
@@ -36,6 +42,7 @@
 			</Rotate>
 		</Translate>
 		<Translate vector="0 0 0">
+		<Shape geometry="sph0" material="lc0" />
 		<Scale scale="1000 0.01 1000">
 <!--			<Shape geometry="sph0" material="dif0" /> -->
 		</Scale>

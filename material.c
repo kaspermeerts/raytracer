@@ -14,7 +14,7 @@ Colour diff_colour(Light *light, Material *mat, Vec3 cam_dir, Vec3 light_dir,
 	ndotv = MAX(0, vec3_dot(light_dir, normal));
 
 	light_col = colour_scale(light->intensity, colour_scale(ndotv, light->colour));
-	return colour_mul(mat->colour, light_col);
+	return colour_mul(mat->diffuse_colour, light_col);
 }
 
 Colour spec_colour(Light *light, Material *mat, Vec3 light_dir, Vec3 cam_dir,
@@ -29,7 +29,7 @@ Colour spec_colour(Light *light, Material *mat, Vec3 light_dir, Vec3 cam_dir,
 
 	light_col = colour_scale(light->intensity,
 			colour_scale(hdotn, light->colour));
-	return colour_mul(mat->colour, light_col);
+	return colour_mul(mat->specular_colour, light_col);
 }
 
 Colour light_mat_colour(Light *light, Material *mat, Vec3 cam_dir,
@@ -37,24 +37,9 @@ Colour light_mat_colour(Light *light, Material *mat, Vec3 cam_dir,
 {
 	Colour final, col1, col2;
 
-	switch(mat->type)
-	{
-	case MATERIAL_DIFFUSE:
-		return diff_colour(light, mat, cam_dir, light_dir, normal);
-		break;
-	case MATERIAL_PHONG:
-		return spec_colour(light, mat, cam_dir, light_dir, normal);
-		break;
-	case MATERIAL_COMBINED:
-		col1 = light_mat_colour(light, mat->mat1, cam_dir, light_dir, normal);
-		col2 = light_mat_colour(light, mat->mat2, cam_dir, light_dir, normal);
-		final = colour_add(
-				colour_scale(mat->weight1, col1),
-				colour_scale(mat->weight2, col2));
-		break;
-	default:
-		assert("Unknown material!" == NULL);
-	}
+	col1 = diff_colour(light, mat, cam_dir, light_dir, normal);
+	col2 = spec_colour(light, mat, cam_dir, light_dir, normal);
+	final = colour_add(col1, col2);
 
 	return final;
 }

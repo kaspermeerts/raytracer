@@ -21,16 +21,7 @@
    </Geometry>
 
    <Materials>
-	  <DiffuseMaterial color="0.1 0.0 0.2" name="red" />
-      <DiffuseMaterial color="0.75 0.75 1" name="dif0" />
-      <PhongMaterial color="1 1 1" shininess="400" name="pho0" />
-      <LinearCombinedMaterial material1="dif0" weight1="1"
-	                          material2="pho0" weight2="1"
-							  name="lc0" />
-	  <GlossyMaterial color="1 1 1" name="mirror" />
-	  <LinearCombinedMaterial material1="dif0"   weight1="0.0"
-	                          material2="mirror" weight2="1.0"
-							  name="lcmirror"/>
+      <Material diffuse_color="0.75 0.75 1" specular_color="1 1 1" specular_exponent="400" name="lc0" />
    </Materials>
 
 	<Scene camera="cam0" lights="light0,light1" background="0.3 0.3 0.3">

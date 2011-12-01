@@ -31,7 +31,7 @@ static Colour fragment_shader(Material *mat, Mesh *mesh,
 	b = b;
 	c = c;
 
-	return mat->colour;
+	return mat->diffuse_colour;
 }
 
 static void raster_triangle(Raster *raster, Material *mat, Mesh *mesh,

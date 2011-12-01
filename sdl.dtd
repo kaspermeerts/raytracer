@@ -110,36 +110,17 @@
 >
 
 
-<!ELEMENT Materials ((DiffuseMaterial|PhongMaterial|LinearCombinedMaterial|GlossyMaterial)*)>
+<!ELEMENT Materials (Material*)>
 <!ATTLIST Materials>
 
-<!ELEMENT DiffuseMaterial EMPTY>
-<!ATTLIST DiffuseMaterial
-	color						CDATA			#REQUIRED
+<!ELEMENT Material EMPTY>
+<!ATTLIST Material
+	diffuse_color				CDATA			#REQUIRED
+	specular_color				CDATA			"0 0 0"
+	specular_exponent			CDATA			"1"
 	name						ID				#REQUIRED
 >
 
-<!ELEMENT PhongMaterial EMPTY>
-<!ATTLIST PhongMaterial
-	color						CDATA			#REQUIRED
-	shininess					CDATA			#REQUIRED
-	name						ID				#REQUIRED
->
-
-<!ELEMENT LinearCombinedMaterial EMPTY>
-<!ATTLIST LinearCombinedMaterial
-	material1					IDREF			#REQUIRED
-	weight1						CDATA			"0.5"
-	material2					IDREF			#REQUIRED
-	weight2						CDATA			"0.5"
-	name						ID				#REQUIRED	
->
-
-<!ELEMENT GlossyMaterial EMPTY>
-<!ATTLIST GlossyMaterial
-	color						CDATA			#REQUIRED
-	name						ID				#REQUIRED
->
 
 <!ELEMENT Scene ((Shape|Rotate|Translate|Scale)+)>
 <!ATTLIST Scene

@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <math.h>
+#include <stdlib.h>
 #include "ray.h"
 
 Ray camera_ray(Camera *cam, int nx, int ny, int i, int j, double near)
@@ -421,29 +422,12 @@ static Colour hit_light_colour(Hit *hit, Light *light, Material *mat, Vec3 cam_d
 	Colour final, col1, col2;
 	Ray rray;
 
-	switch(mat->type)
-	{
-	case MATERIAL_DIFFUSE:
-		return diff_colour(light, mat, cam_dir, light_dir, normal);
-		break;
-	case MATERIAL_PHONG:
-		return spec_colour(light, mat, cam_dir, light_dir, normal);
-		break;
-	case MATERIAL_COMBINED:
-		col1 = hit_light_colour(hit, light, mat->mat1, cam_dir, light_dir, normal);
-		col2 = hit_light_colour(hit, light, mat->mat2, cam_dir, light_dir, normal);
-		final = colour_add(
-				colour_scale(mat->weight1, col1),
-				colour_scale(mat->weight2, col2));
-		break;
-	case MATERIAL_GLOSSY:
-		rray.direction = vec3_reflect(vec3_scale(-1, cam_dir), normal);
-		rray.origin = vec3_add(hit->position, vec3_scale(1e-3, rray.direction));
-		final = ray_colour(rray, 2);
-		break;
-	default:
-		assert("Unknown material!" == NULL);
-	}
+	rray = rray;
+	hit = hit;
+
+	col1 = diff_colour(light, mat, cam_dir, light_dir, normal);
+	col2 = spec_colour(light, mat, cam_dir, light_dir, normal);
+	final = colour_add(col1, col2);
 
 	return final;
 }

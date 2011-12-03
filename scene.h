@@ -87,6 +87,7 @@ typedef struct Config {
 	int width;
 	int height;
 	bool antialiasing;
+	int num_samples;
 } Config;
 
 const Config *config;

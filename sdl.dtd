@@ -6,7 +6,8 @@
 <!ATTLIST Config
 	width						CDATA			"512"
 	height						CDATA			"512"
-	antialiasing				CDATA			"true"
+	antialiasing				CDATA			"false"
+	samples						CDATA			"1"
 >
 
 <!ELEMENT Cameras (Camera+)>

@@ -3,9 +3,10 @@
 
 <Sdl>
    <Config
-   		width = "512"
+   		width =  "512"
 		height = "512"
 		antialiasing = "false"
+		samples = "4"
 	/>
 
    <Cameras>
@@ -27,22 +28,27 @@
    </Geometry>
 
    <Materials>
-      <Material diffuse_color="0.75 0.75 1" specular_color="1 1 1" specular_exponent="400" name="lc0" />
+      <Material diffuse_color="0.75 0.75 1" specular_color="1 1 1"
+	  		specular_exponent="400" name="blueplastic" />
+      <Material diffuse_color="1 0.74 0.77" specular_color="1 1 1"
+	  		specular_exponent="400" name="pinkplastic" />
+      <Material diffuse_color="0.66 0.88 0.33" specular_color="1 1 1"
+	  		specular_exponent="400" name="greenplastic" />
    </Materials>
 
-	<Scene camera="cam0" lights="light0,light1" background="0.3 0.3 0.3">
+	<Scene camera="cam0" lights="light0,light1" background="0.8 0.8 0.8">
 		<Translate vector="0 0 0">
 
 		<Translate vector="1 1 2">
-				<Shape geometry="sph0" material="lc0" />
+				<Shape geometry="sph0" material="greenplastic" />
 		</Translate>
 		<Translate vector="2 1 0">
 			<Rotate axis="0 1 0" angle="90" >
-			<Shape geometry="cyl0" material="lc0" />
+			<Shape geometry="cyl0" material="pinkplastic" />
 			</Rotate>
 		</Translate>
 		<Translate vector="0 0 0">
-		<Shape geometry="sph0" material="lc0" />
+		<Shape geometry="mesh0" material="blueplastic" />
 		<Scale scale="1000 0.01 1000">
 <!--			<Shape geometry="sph0" material="dif0" /> -->
 		</Scale>

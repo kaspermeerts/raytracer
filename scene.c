@@ -78,6 +78,7 @@ static bool import_config(xmlNode *node)
 	internal_config.width = parse_int(xmlGetProp(node, "width"));
 	internal_config.height = parse_int(xmlGetProp(node, "height"));
 	internal_config.antialiasing = parse_bool(xmlGetProp(node, "antialiasing"));
+	internal_config.num_samples = parse_int(xmlGetProp(node, "samples"));
 
 	config = &internal_config;
 	return true;

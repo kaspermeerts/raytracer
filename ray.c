@@ -3,11 +3,18 @@
 #include <stdlib.h>
 #include "ray.h"
 
-Ray camera_ray(Camera *cam, int nx, int ny, int i, int j, double near)
+static float drand(void)
 {
-	float d, u, v;
+	return rand()/((float) RAND_MAX);
+}
+
+static Ray cam_ray_internal(Camera *cam, int i, int j, float offx, float offy,
+		double near)
+{
 	Ray r;
+	float d, u, v;
 	double bottom, left, width, height;
+	const int nx = config->width, ny = config->height;
 
 	width = near*tan(cam->fov*M_TWO_PI/360.);
 	left = -width/2;
@@ -15,8 +22,8 @@ Ray camera_ray(Camera *cam, int nx, int ny, int i, int j, double near)
 	bottom = -height/2;
 
 	d = near;
-	u = left + width*(i + 0.5)/nx;
-	v = bottom + height*(j + 0.5)/ny;
+	u = left +   width *(i + offx)/nx;
+	v = bottom + height*(j + offy)/ny;
 	r.origin = cam->position;
 	r.direction = vec3_normalize(vec3_add(
 			vec3_scale(-d, cam->w), vec3_add(
@@ -26,6 +33,25 @@ Ray camera_ray(Camera *cam, int nx, int ny, int i, int j, double near)
 	r.far = HUGE_VAL;
 
 	return r;
+}
+
+Ray camera_ray_aa(Camera *cam, int i, int j, int sample, double near)
+{
+	float offx, offy;
+	int p, q;
+	const float n = (float) config->num_samples;
+
+	p = sample % config->num_samples;
+	q = sample / config->num_samples;
+	offx = (p + drand()) / n;
+	offy = (q + drand()) / n;
+
+	return cam_ray_internal(cam, i, j, offx, offy, near);
+}
+
+Ray camera_ray(Camera *cam, int i, int j, double near)
+{
+	return cam_ray_internal(cam, i, j, 0.5, 0.5, near);
 }
 
 static int ray_sphere_intersect(Ray r, Sphere sph, float t[2], Vec3 normal[2])
@@ -102,14 +128,14 @@ static int ray_cylinder_intersect(Ray ray, Cylinder cyl, float t[2],
 		if (!capped)
 			return false;
 
-		/* The order of t[0] and t[1] is arbitrary, there's no guarantee t[0] is the
-		 * closest intersection point. */
+		/* The order of t[0] and t[1] is arbitrary, there's no guarantee t[0]
+		 * will be the closest intersection point. */
 		t[0] = -o.z/d.z;
 		normal[0] = (Vec3) {0, 0, -1};
 		t[1] = (height - o.z)/d.z;
 		normal[1] = (Vec3) {0, 0, 1};
 	}
-	else if (z0 > 0 && z0 < height && z1 > height)
+	else if (z0 >= 0 && z0 <= height && z1 > height)
 	{
 		/* t[0] is correct, yet t[1] is too high and will actually hit the cap,
 		 * if one exists. */
@@ -123,7 +149,7 @@ static int ray_cylinder_intersect(Ray ray, Cylinder cyl, float t[2],
 			normal[1] = normal[0];
 		}
 	}
-	else if (z0 > 0 && z0 < height && z1 < 0)
+	else if (z0 >= 0 && z0 <= height && z1 < 0)
 	{
 		/* t[0] is correct and t[1] is too low. */
 		if (capped)
@@ -137,7 +163,7 @@ static int ray_cylinder_intersect(Ray ray, Cylinder cyl, float t[2],
 			normal[1] = normal[0];
 		}
 	}
-	else if (z1 > 0 && z1 < height && z0 > height)
+	else if (z1 >= 0 && z1 <= height && z0 > height)
 	{
 		/* t[1] is correct, yet t[0] is too high and will actually hit the cap,
 		 * if one exists. */
@@ -152,7 +178,7 @@ static int ray_cylinder_intersect(Ray ray, Cylinder cyl, float t[2],
 			normal[0] = normal[1];
 		}
 	}
-	else if (z1 > 0 && z1 < height && z0 < 0)
+	else if (z1 >= 0 && z1 <= height && z0 < 0)
 	{
 		/* t[1] is correct and t[0] is too low. */
 		if (capped)
@@ -166,7 +192,7 @@ static int ray_cylinder_intersect(Ray ray, Cylinder cyl, float t[2],
 			normal[0] = normal[1];
 		}
 	}
-	else if (z0 > 0 && z0 < height && z1 > 0 && z1 < height)
+	else if (z0 >= 0 && z0 <= height && z1 >= 0 && z1 <= height)
 	{
 		/* Nothing left to be fixed */
 	}

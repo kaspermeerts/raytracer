@@ -105,7 +105,7 @@ int main(int argc, char **argv)
 
 		/* The last parameter is the near plane, which is irrelevant for
 		 * the moment. */
-		r = camera_ray(cam, WIDTH, HEIGHT, i, j, 1);
+		r = camera_ray(cam, i, j, 1);
 
 		c = ray_colour(r, 10);
 

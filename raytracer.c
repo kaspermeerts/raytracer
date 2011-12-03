@@ -47,6 +47,7 @@ int main(int argc, char **argv)
 	height = config->height;
 	buffer = calloc(width*height, sizeof(Colour));
 
+	srand(0x20071208);
 	/* START */
 	start = clock();
 
@@ -58,13 +59,15 @@ int main(int argc, char **argv)
 		Colour c;
 		Ray r;
 
-		/* The last parameter is the near plane, which is irrelevant for
-		 * the moment. */
-		r = camera_ray(cam, width, height, i, j, 1);
+		c = BLACK;
+		for (int k = 0; k < SQUARE(config->num_samples); k++)
+		{
+			r = camera_ray_aa(cam, i, j, k, 1);
 
-		c = ray_colour(r, 10);
+			c = colour_add(c, ray_colour(r, 10));
+		}
 
-		buffer[width*j + i] = c;
+		buffer[width*j + i] = colour_scale(1.0/SQUARE(config->num_samples), c);
 	}
 	print_progressbar(j, height - 1);
 	}

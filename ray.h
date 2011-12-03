@@ -18,7 +18,8 @@ typedef struct Hit {
 	float t; /* Parameter of the ray equation: v = o + t*d */
 } Hit;
 
-Ray camera_ray(Camera *cam, int nx, int ny, int i, int j, double near);
+Ray camera_ray_aa(Camera *cam, int i, int j, int sample, double near);
+Ray camera_ray(Camera *cam, int i, int j, double near);
 bool ray_intersect(Ray ray, Hit *hit);
 Colour ray_colour(Ray ray, int ttl);
 #endif

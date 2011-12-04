@@ -7,7 +7,8 @@
 	width						CDATA			"512"
 	height						CDATA			"512"
 	antialiasing				CDATA			"false"
-	samples						CDATA			"1"
+	aa_samples					CDATA			"4"
+	shadow_samples				CDATA			"9"
 >
 
 <!ELEMENT Cameras (Camera+)>
@@ -22,16 +23,8 @@
 	name						ID				#REQUIRED
 >
 
-<!ELEMENT Lights ((DirectionalLight|PointLight|SpotLight)+)>
+<!ELEMENT Lights ((PointLight|AreaLight)+)>
 <!ATTLIST Lights>
-
-<!ELEMENT DirectionalLight EMPTY>
-<!ATTLIST DirectionalLight
-	direction					CDATA			#REQUIRED
-	intensity					CDATA			"1"			
-	color						CDATA			"1 1 1"
-	name						ID				#REQUIRED
->
 
 <!ELEMENT PointLight EMPTY>
 <!ATTLIST PointLight
@@ -41,18 +34,25 @@
 	name						ID				#REQUIRED
 >
 
-<!ELEMENT SpotLight EMPTY>
-<!ATTLIST SpotLight
+<!ELEMENT AreaLight EMPTY>
+<!ATTLIST AreaLight
 	position					CDATA			#REQUIRED
-	direction					CDATA			#REQUIRED
-	angle						CDATA			#REQUIRED
-	intensity					CDATA			"1"			
+	edge1						CDATA			#REQUIRED
+	edge2						CDATA			#REQUIRED
+	intensity					CDATA			"1"
 	color						CDATA			"1 1 1"
 	name						ID				#REQUIRED
 >
 
-<!ELEMENT Geometry ((Sphere|Cylinder|Cone|Torus|Teapot|IndexedTriangleSet|Mesh)+)>
+<!ELEMENT Geometry ((Plane|Sphere|Cylinder|Cone|Torus|Teapot|Mesh)+)>
 <!ATTLIST Geometry>
+
+<!ELEMENT Plane EMPTY>
+<!ATTLIST Plane
+	edge1						CDATA			#REQUIRED
+	edge2						CDATA			#REQUIRED
+	name						ID				#REQUIRED
+>
 
 <!ELEMENT Sphere EMPTY>
 <!ATTLIST Sphere

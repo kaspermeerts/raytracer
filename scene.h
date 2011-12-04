@@ -4,7 +4,7 @@
 #include "cgmath.h"
 #include "colour.h"
 #include "mesh.h"
-#include "material.h"
+#include "lighting.h"
 
 enum { MAX_LIGHTS=8 };
 
@@ -38,9 +38,10 @@ typedef struct Torus {
 } Torus;
 
 typedef struct Shape {
-	enum { SHAPE_SPHERE, SHAPE_CYLINDER, SHAPE_CONE, SHAPE_TORUS, SHAPE_MESH }
-			type;
+	enum { SHAPE_PLANE, SHAPE_SPHERE, SHAPE_CYLINDER, SHAPE_CONE, SHAPE_TORUS,
+			SHAPE_MESH } type;
 	union {
+		Plane plane;
 		Sphere sphere;
 		Cylinder cylinder;
 		Cone cone;
@@ -50,11 +51,17 @@ typedef struct Shape {
 	char *name;
 } Shape;
 
+typedef struct BBox {
+	float xmin, ymin, zmin;
+	float xmax, ymax, zmax;
+} BBox;
+
 typedef struct Surface {
 	Shape *shape;
 	Material *material;
-	double model_to_world[16];
-	double world_to_model[16];
+	Mat4 model_to_world;
+	Mat4 world_to_model;
+	BBox bbox;
 	struct Surface *next;
 } Surface;
 
@@ -63,7 +70,6 @@ typedef struct Scene {
 	int num_lights;
 	Light *light[MAX_LIGHTS];
 	Colour background;
-	/*struct Node graph;*/ /* One node? */
 	Surface *root;
 } Scene;
 
@@ -87,7 +93,8 @@ typedef struct Config {
 	int width;
 	int height;
 	bool antialiasing;
-	int num_samples;
+	int aa_samples;
+	int shadow_samples;
 } Config;
 
 const Config *config;

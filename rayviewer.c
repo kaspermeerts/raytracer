@@ -8,6 +8,7 @@
 #include "cgmath.h"
 #include "colour.h"
 #include "ray.h"
+#include "shading.h"
 #include "ppm.h"
 
 /* TODO: Put in config structure */

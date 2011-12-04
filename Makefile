@@ -1,28 +1,28 @@
 CC = gcc
 DEFINES =
 WARNINGS = -Wextra -Wall -Wwrite-strings -Wshadow -Wpointer-arith -Wcast-qual -Wstrict-prototypes -Wmissing-prototypes -Wstrict-aliasing -Wno-pointer-sign -pedantic
-CFLAGS = $(WARNINGS) $(DEFINES) -std=c99 -O0 -ffast-math -pipe -ggdb `xml2-config --cflags`
-SOURCES = colour.c vector.c scene.c ppm.c mesh.c material.c matrix.c quaternion.c
-INCFLAGS = -I.
+#OPTIM = -ffast-math -O0
+OPTIM = -ffast-math -O3 -flto -DNDEBUG
+CFLAGS = $(WARNINGS) $(DEFINES) $(OPTIM) -std=c99 -pipe -ggdb
+COMMON_SRC = colour.c vector.c quaternion.c matrix.c scene.c lighting.c ppm.c mesh.c
+RAY_SRC = ray.c shading.c $(COMMON_SRC)
+RASTER_SRC = raster.c $(COMMON_SRC)
+INCFLAGS = -I. `xml2-config --cflags`
 LDFLAGS = -lm -Lobjreader -lobjreader `xml2-config --libs`
 
-all: rayviewer raytracer rasteriser matrixtest
+all: rayviewer raytracer rasteriser
 
-matrixtest: matrixtest.c scene.c matrix.c vector.c quaternion.c mesh.c
-	@echo "	CC matrixtest"
-	@$(CC) -o matrixtest matrixtest.c $(CFLAGS) $(INCFLAGS) scene.c matrix.c vector.c quaternion.c mesh.c $(LDFLAGS) -lSDL
-	
-rayviewer: rayviewer.c ray.c $(SOURCES)
+rayviewer: rayviewer.c $(RAY_SRC)
 	@echo "	CC rayviewer"
-	@$(CC) -o rayviewer rayviewer.c ray.c $(CFLAGS) $(INCFLAGS) $(SOURCES) $(LDFLAGS) -lSDL
+	@$(CC) -o rayviewer rayviewer.c $(RAY_SRC) $(CFLAGS) $(INCFLAGS) $(LDFLAGS) -lSDL
 
-raytracer: raytracer.c ray.c $(SOURCES)
+raytracer: raytracer.c $(RAY_SRC)
 	@echo "	CC raytracer"
-	@$(CC) -o raytracer raytracer.c ray.c $(CFLAGS) $(INCFLAGS) $(SOURCES) $(LDFLAGS)
+	@$(CC) -o raytracer raytracer.c $(RAY_SRC) $(CFLAGS) $(INCFLAGS) $(LDFLAGS)
 
-rasteriser: rasteriser.c raster.c $(SOURCES)
+rasteriser: rasteriser.c $(RASTER_SRC)
 	@echo "	CC rasteriser"
-	@$(CC) -o rasteriser rasteriser.c raster.c $(CFLAGS) $(INCFLAGS) $(SOURCES) $(LDFLAGS)
+	@$(CC) -o rasteriser rasteriser.c $(RASTER_SRC) $(CFLAGS) $(INCFLAGS) $(LDFLAGS)
 
 ctags:
 	@echo "	CTAGS"

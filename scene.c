@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -78,7 +79,8 @@ static bool import_config(xmlNode *node)
 	internal_config.width = parse_int(xmlGetProp(node, "width"));
 	internal_config.height = parse_int(xmlGetProp(node, "height"));
 	internal_config.antialiasing = parse_bool(xmlGetProp(node, "antialiasing"));
-	internal_config.num_samples = parse_int(xmlGetProp(node, "samples"));
+	internal_config.aa_samples = parse_int(xmlGetProp(node, "aa_samples"));
+	internal_config.shadow_samples = parse_int(xmlGetProp(node, "shadow_samples"));
 
 	config = &internal_config;
 	return true;
@@ -134,28 +136,21 @@ static bool import_lights(Sdl *sdl, xmlNode *node, int n)
 	{
 		Light *light = &sdl->light[i];
 
-		if (strcmp(cur_node->name , "DirectionalLight") == 0)
-		{
-			light->type = LIGHT_DIRECTIONAL;
-			light->direction = vec3_normalize(
-					parse_vec3(xmlGetProp(cur_node, "direction")));
-		} else if (strcmp(cur_node->name, "PointLight") == 0)
+		if (strcmp(cur_node->name, "PointLight") == 0)
 		{
 			light->type = LIGHT_POINT;
-			light->position = parse_vec3(xmlGetProp(cur_node, "position"));
-		} else if (strcmp(cur_node->name, "SpotLight") == 0)
+		} else if (strcmp(cur_node->name, "AreaLight") == 0)
 		{
-			light->type = LIGHT_SPOT;
-			light->position = parse_vec3(xmlGetProp(cur_node, "position"));
-			light->direction = vec3_normalize(
-					parse_vec3(xmlGetProp(cur_node, "direction")));
-			light->angle = parse_double(xmlGetProp(cur_node, "angle"));
+			light->type = LIGHT_AREA;
+			light->plane.edge1 = parse_vec3(xmlGetProp(cur_node, "edge1"));
+			light->plane.edge2 = parse_vec3(xmlGetProp(cur_node, "edge2"));
 		} else
 		{
 			printf("Unknown light type: \"%s\"\n", cur_node->name);
 			return false;
 		}
 
+		light->position = parse_vec3(xmlGetProp(cur_node, "position"));
 		light->colour = parse_colour(xmlGetProp(cur_node, "color"));
 		light->intensity = parse_double(xmlGetProp(cur_node, "intensity"));
 		light->name = strdup(xmlGetProp(cur_node, "name"));
@@ -177,7 +172,12 @@ static bool import_shapes(Sdl *sdl, xmlNode *node, int n)
 			i++, cur_node = xmlNextElementSibling(cur_node))
 	{
 		Shape *shape = &sdl->shape[i];
-		if (strcmp(cur_node->name, "Sphere") == 0)
+		if (strcmp(cur_node->name, "Plane") == 0)
+		{
+			shape->type = SHAPE_PLANE;
+			shape->u.plane.edge1 = parse_vec3(xmlGetProp(cur_node, "edge1"));
+			shape->u.plane.edge2 = parse_vec3(xmlGetProp(cur_node, "edge2"));
+		} else if (strcmp(cur_node->name, "Sphere") == 0)
 		{
 			shape->type = SHAPE_SPHERE;
 			shape->u.sphere.radius =
@@ -415,10 +415,103 @@ static bool import_graph(Sdl *sdl, Surface **root, xmlNode *xml_node,
 	return true;
 }
 
+static BBox build_bbox_plane(Plane plane, Mat4 model_matrix)
+{
+	BBox bbox;
+	/* Bottom-left, top-right, etc... */
+	Vec3 bl = (Vec3) {0, 0, 0}, br = plane.edge1, tl = plane.edge2,
+			tr = vec3_add(plane.edge1, plane.edge2);
+
+	bl = mat4_transform3_homo(model_matrix, bl);
+	br = mat4_transform3_homo(model_matrix, br);
+	tl = mat4_transform3_homo(model_matrix, tl);
+	tr = mat4_transform3_homo(model_matrix, tr);
+
+	bbox.xmin = MIN(bl.x, MIN(br.x, MIN(tl.x, tr.x)));
+	bbox.ymin = MIN(bl.y, MIN(br.y, MIN(tl.y, tr.y)));
+	bbox.zmin = MIN(bl.z, MIN(br.z, MIN(tl.z, tr.z)));
+
+	bbox.xmax = MAX(bl.x, MAX(br.x, MAX(tl.x, tr.x))) + 1e-3;
+	bbox.ymax = MAX(bl.y, MAX(br.y, MAX(tl.y, tr.y))) + 1e-3;
+	bbox.zmax = MAX(bl.z, MAX(br.z, MAX(tl.z, tr.z))) + 1e-3;
+
+	return bbox;
+}
+
+static BBox build_bbox_mesh(Mesh *mesh, Mat4 model_matrix)
+{
+	BBox bbox;
+
+	bbox.xmin = bbox.ymin = bbox.zmin =  HUGE_VAL;
+	bbox.xmax = bbox.ymax = bbox.zmax = -HUGE_VAL;
+
+	for (int i = 0; i < mesh->num_vertices; i++)
+	{
+		Vec4 hpos; /* Homogeneous position */
+		Vec3 pos;
+
+		hpos = mat4_transform(model_matrix,
+				vec4_from_vec3(mesh->vertex[i], 1.0));
+		pos = vec4_homogeneous_divide(hpos);
+
+		if (pos.x < bbox.xmin)
+			bbox.xmin = pos.x;
+		if (pos.y < bbox.ymin)
+			bbox.ymin = pos.y;
+		if (pos.z < bbox.zmin)
+			bbox.zmin = pos.z;
+
+		if (pos.x > bbox.xmax)
+			bbox.xmax = pos.x;
+		if (pos.y > bbox.ymax)
+			bbox.ymax = pos.y;
+		if (pos.z > bbox.zmax)
+			bbox.zmax = pos.z;
+	}
+
+	return bbox;
+}
+
+static void build_bbox(Surface *surface)
+{
+	Vec4 center4 = {0, 0, 0, 1.0};
+	Vec3 center;
+
+	center4 = mat4_transform(surface->model_to_world, center4);
+	center = vec4_homogeneous_divide(center4);
+
+	switch(surface->shape->type)
+	{
+	case SHAPE_PLANE:
+		surface->bbox = build_bbox_plane(surface->shape->u.plane,
+				surface->model_to_world);
+		break;
+	case SHAPE_SPHERE:
+		surface->bbox.xmin = center.x - surface->shape->u.sphere.radius;
+		surface->bbox.ymin = center.y - surface->shape->u.sphere.radius;
+		surface->bbox.zmin = center.z - surface->shape->u.sphere.radius;
+		surface->bbox.xmax = center.x + surface->shape->u.sphere.radius;
+		surface->bbox.ymax = center.y + surface->shape->u.sphere.radius;
+		surface->bbox.zmax = center.z + surface->shape->u.sphere.radius;
+		break;
+	case SHAPE_CYLINDER:
+		surface->bbox.xmin = surface->bbox.ymin = surface->bbox.zmin = -HUGE_VAL;
+		surface->bbox.xmax = surface->bbox.ymax = surface->bbox.zmax =  HUGE_VAL;
+		break;
+	case SHAPE_MESH:
+		surface->bbox = build_bbox_mesh(surface->shape->u.mesh,
+				surface->model_to_world);
+		break;
+	default:
+		printf("Unimplemented\n");
+		exit(1);
+		break;
+	}
+}
+
 static bool import_scene(Sdl *sdl, xmlNode *node, int n)
 {
 	Scene *rw_scene = &sdl->internal_scene;
-	int i;
 	const char *cam_name, *light_names;
 	MatrixStack *model_matrix;
 
@@ -432,7 +525,7 @@ static bool import_scene(Sdl *sdl, xmlNode *node, int n)
 	}
 	cam_name = xmlGetProp(node, "camera");
 	rw_scene->camera = NULL;
-	for (i = 0; i < sdl->num_cameras; i++)
+	for (int i = 0; i < sdl->num_cameras; i++)
 		if (strcmp(sdl->camera[i].name, cam_name) == 0)
 			rw_scene->camera = &sdl->camera[i];
 
@@ -471,6 +564,11 @@ static bool import_scene(Sdl *sdl, xmlNode *node, int n)
 	}
 	matstack_destroy(model_matrix);
 
+	/* Postprocessing: build the bounding boxes */
+	for (Surface *surface = rw_scene->root; surface; surface = surface->next)
+	{
+		build_bbox(surface);
+	}
 	scene = &sdl->internal_scene;
 	return true;
 }

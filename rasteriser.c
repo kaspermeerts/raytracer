@@ -47,7 +47,7 @@ static Vec4 vertex_shader(Vec3 position, Vec3 normal, int i)
 	Vec3 eye_pos_xyz; /* Position in eye space */
 	Vec3 light_dir;
 	Vec4 eye_pos, homo_pos; /* Homogeneous position vector; */
-	
+
 	homo_pos = vec4_from_vec3(position, 1.0);
 	eye_pos = mat4_transform(uniform.mv, homo_pos);
 	/* No homogeneous divide necessary, as the modelview matrix holds no
@@ -58,7 +58,7 @@ static Vec4 vertex_shader(Vec3 position, Vec3 normal, int i)
 	assert(fabs(eye_pos.w - 1.0) < 0.01);
 
 	light_dir = vec3_sub(uniform.light_pos, eye_pos_xyz);
-	varying[i].normal = mat4_transform3(uniform.normal_matrix, normal);
+	varying[i].normal = mat4_transform3_hetero(uniform.normal_matrix, normal);
 	varying[i].light_dir = vec3_normalize(light_dir);
 	varying[i].cam_dir = vec3_scale(-1, vec3_normalize(eye_pos_xyz));
 
@@ -256,8 +256,7 @@ static void rasterise(Raster *raster)
 	 * Otherwise, the position will be interpreted as in model space, and thus
 	 * fixed in the reference frame of the object. This will make lighting on an
 	 * object appear static */
-	uniform.light_pos = vec4_homogeneous_divide(mat4_transform(view,
-			vec4_from_vec3(scene->light[0]->position, 1.0)));
+	uniform.light_pos = mat4_transform3_homo(view, scene->light[0]->position);
 
 #if 0
 	printf("Projection\n");

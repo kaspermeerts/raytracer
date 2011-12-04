@@ -6,6 +6,7 @@
 
 #include "colour.h"
 #include "ray.h"
+#include "shading.h"
 #include "ppm.h"
 
 static void print_progressbar(int progress, int total)
@@ -59,15 +60,23 @@ int main(int argc, char **argv)
 		Colour c;
 		Ray r;
 
-		c = BLACK;
-		for (int k = 0; k < SQUARE(config->num_samples); k++)
+		if (config->antialiasing)
 		{
-			r = camera_ray_aa(cam, i, j, k, 1);
+			c = BLACK;
+			for (int k = 0; k < SQUARE(config->aa_samples); k++)
+			{
+				r = camera_ray_aa(cam, i, j, k, 1);
 
-			c = colour_add(c, ray_colour(r, 10));
+				c = colour_add(c, ray_colour(r, 10));
+			}
+			c = colour_scale(1.0/SQUARE(config->aa_samples), c);
+		} else
+		{
+			r = camera_ray(cam, i, j, 1);
+			c = ray_colour(r, 10);
 		}
 
-		buffer[width*j + i] = colour_scale(1.0/SQUARE(config->num_samples), c);
+		buffer[width*j + i] = c;
 	}
 	print_progressbar(j, height - 1);
 	}

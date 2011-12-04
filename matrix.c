@@ -73,7 +73,14 @@ Vec4 mat4_transform(Mat4 m, Vec4 v)
 	return out;
 }
 
-Vec3 mat4_transform3(Mat4 m, Vec3 v)
+Vec3 mat4_transform3_homo(Mat4 m, Vec3 v)
+{
+	Vec4 v4 = vec4_from_vec3(v, 1.0);
+	v4 = mat4_transform(m, v4);
+	return vec4_homogeneous_divide(v4);
+}
+
+Vec3 mat4_transform3_hetero(Mat4 m, Vec3 v)
 {
 	const double v0 = v.x, v1 = v.y, v2 = v.z;
 	Vec3 out;

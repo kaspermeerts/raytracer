@@ -2,58 +2,66 @@
 <!DOCTYPE Sdl SYSTEM "sdl.dtd">
 
 <Sdl>
-   <Config
-   		width =  "512"
+	<Config
+		width =  "512"
 		height = "512"
-		antialiasing = "false"
-		samples = "4"
+		antialiasing = "true"
+		aa_samples = "8"
+		shadow_samples = "8"
 	/>
 
-   <Cameras>
-      <Camera position="-3 4 -3" direction="3 -4 3" up="0 1 0" fovy="45" 
-	  		name="cam0" />
-   </Cameras>
+	<Cameras>
+	<Camera position="-5 5 -5" direction="5 -5 5" up="0 1 0" fovy="45" 
+	name="cam0" />
+	</Cameras>
 
-   <Lights>
-      <PointLight position="0 3 0" intensity="0.9" color="1 1 1" name="light0" />
-	  <PointLight position="5 1 5" intensity="0.0" color="1 1 0" name="light1" />
-   </Lights>
+	<Lights>
+	<PointLight position="0 8 0" intensity="0.9" color="1 1 1" name="light0" />
+	<PointLight position="5 1 5" intensity="0.0" color="1 1 0" name="light1" />
+	<AreaLight position="-1 8 -1" edge1="0 0 2" edge2="2 0 0" name="arealight" />
+	</Lights>
 
-   <Geometry>
-	   <Cylinder radius="1" height="2" capped="false" name="cyl0" />
-	   <Sphere radius="1" name="sph0" />
-	   <Cone radius="1" height="2" capped="false" name="con0" />
-	   <Torus innerRadius="1" outerRadius="2" name="tor0" />
-	   <Mesh src="torus.obj" name="mesh0" />
-   </Geometry>
+	<Geometry>
+	<Cylinder radius="1" height="2" capped="false" name="cyl0" />
+	<Sphere radius="1" name="sph0" />
+	<Cone radius="1" height="2" capped="false" name="con0" />
+	<Torus innerRadius="1" outerRadius="2" name="tor0" />
+	<Mesh src="torus.obj" name="mesh0" />
+	<Plane edge1="0 0 16" edge2="16 0 0" name="plane"/>
+	</Geometry>
 
-   <Materials>
-      <Material diffuse_color="0.75 0.75 1" specular_color="1 1 1"
-	  		specular_exponent="400" name="blueplastic" />
-      <Material diffuse_color="1 0.74 0.77" specular_color="1 1 1"
-	  		specular_exponent="400" name="pinkplastic" />
-      <Material diffuse_color="0.66 0.88 0.33" specular_color="1 1 1"
-	  		specular_exponent="400" name="greenplastic" />
-   </Materials>
+	<Materials>
+	<Material diffuse_color="0.75 0.75 1" specular_color="1 1 1"
+			specular_exponent="400" name="greyplastic" />
+	<Material diffuse_color="1 0.74 0.77" specular_color="1 1 1"
+			specular_exponent="400" name="pinkplastic" />
+	<Material diffuse_color="0.88 0.44 0.22" specular_color="1 1 1"
+			specular_exponent="400" name="redplastic" />
+	<Material diffuse_color="0.22 0.88 0.44" specular_color="1 1 1"
+			specular_exponent="400" name="greenplastic" />
+	<Material diffuse_color="0.44 0.22 0.88" specular_color="1 1 1"
+			specular_exponent="400" name="blueplastic" />
+	</Materials>
 
-	<Scene camera="cam0" lights="light0,light1" background="0.8 0.8 0.8">
-		<Translate vector="0 0 0">
+	<Scene camera="cam0" lights="arealight" background="0.8 0.8 0.8">
+	<Translate vector="0 0 0">
 
-		<Translate vector="1 1 2">
-				<Shape geometry="sph0" material="greenplastic" />
+		<Translate vector=" 2  2 -2">
+			<Shape geometry="sph0" material="redplastic" />
 		</Translate>
-		<Translate vector="2 1 0">
-			<Rotate axis="0 1 0" angle="90" >
-			<Shape geometry="cyl0" material="pinkplastic" />
-			</Rotate>
+		<Translate vector=" 0  2  0">
+			<Shape geometry="sph0" material="greenplastic" />
 		</Translate>
-		<Translate vector="0 0 0">
-		<Shape geometry="mesh0" material="blueplastic" />
-		<Scale scale="1000 0.01 1000">
-<!--			<Shape geometry="sph0" material="dif0" /> -->
-		</Scale>
+		<Translate vector="-2  2  2">
+			<Shape geometry="sph0" material="blueplastic" />
 		</Translate>
 
+		<Translate vector="-8 0 -8">
+			<Shape geometry="plane" material="greyplastic" />
 		</Translate>
+
+	</Translate>
 	</Scene>
 </Sdl>
+<!-- vim: ft=xml
+-->

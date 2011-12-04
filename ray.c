@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include "ray.h"
 
-static float drand(void)
+float drand(void)
 {
 	return rand()/((float) RAND_MAX);
 }
@@ -35,23 +35,54 @@ static Ray cam_ray_internal(Camera *cam, int i, int j, float offx, float offy,
 	return r;
 }
 
+/* Fullscreen antialiasing. Ultra-slow. */
 Ray camera_ray_aa(Camera *cam, int i, int j, int sample, double near)
 {
 	float offx, offy;
 	int p, q;
-	const float n = (float) config->num_samples;
+	const float n = (float) config->aa_samples;
 
-	p = sample % config->num_samples;
-	q = sample / config->num_samples;
+	p = sample % config->aa_samples;
+	q = sample / config->aa_samples;
 	offx = (p + drand()) / n;
 	offy = (q + drand()) / n;
 
 	return cam_ray_internal(cam, i, j, offx, offy, near);
 }
 
+/* The offset 0.5 traces the ray right through the center of the pixel. */
 Ray camera_ray(Camera *cam, int i, int j, double near)
 {
 	return cam_ray_internal(cam, i, j, 0.5, 0.5, near);
+}
+
+/* Various intersection routines. The sphere and cylinder routines are the most
+ * mature. */
+static int ray_plane_intersect(Ray ray, Plane plane, float t[1], Vec3 normal[1])
+{
+	float test_t, alpha, beta, det;
+	Vec3 a = plane.edge1, b = plane.edge2, d = ray.direction, o = ray.origin;
+	Vec3 n, axn, bxn, pos;
+
+	/* This is basically Cramer's rule with vector calculus */
+	n = vec3_cross(a, b);
+	test_t = -vec3_dot(o, n)/vec3_dot(d, n);
+	pos = vec3_add(o, vec3_scale(test_t, d));
+
+	axn = vec3_cross(a, n);
+	bxn = vec3_cross(b, n);
+	det = vec3_dot(a, bxn);
+
+	alpha =  vec3_dot(pos, bxn)/det;
+	beta  = -vec3_dot(pos, axn)/det;
+
+	if (alpha < 0 || alpha > 1 || beta < 0 || beta > 1)
+		return 0;
+
+	t[0] = test_t;
+	normal[0] = n;
+
+	return 1;
 }
 
 static int ray_sphere_intersect(Ray r, Sphere sph, float t[2], Vec3 normal[2])
@@ -76,7 +107,6 @@ static int ray_sphere_intersect(Ray r, Sphere sph, float t[2], Vec3 normal[2])
 		return 1;
 	} else
 	{
-
 		t[0] = (-vd - sqrtf(discriminant))/dd;
 		t[1] = (-vd + sqrtf(discriminant))/dd;
 
@@ -259,7 +289,9 @@ static int ray_cone_intersect(Ray ray, Cone cone, float t[2], Vec3 normal[2])
 	return 1;
 }
 
-static int ray_triangle_intersect(Ray ray, Vec3 u, Vec3 v, Vec3 w, float *t, float *a, float *b, float *c)
+/* This is basically Cramer's rule, but with vector calculus. */
+static int ray_triangle_intersect(Ray ray, Vec3 u, Vec3 v, Vec3 w,
+		float *t, float *a, float *b, float *c)
 {
 	Vec3 edge1, edge2, tvec, pvec, qvec;
 	float det;
@@ -269,8 +301,6 @@ static int ray_triangle_intersect(Ray ray, Vec3 u, Vec3 v, Vec3 w, float *t, flo
 
 	pvec = vec3_cross(ray.direction, edge2);
 	det = vec3_dot(edge1, pvec);
-
-	//assert(det > -0.0001 && det < 0.0001);
 
 	tvec = vec3_sub(ray.origin, u);
 	*b = vec3_dot(tvec, pvec) / det;
@@ -317,11 +347,10 @@ static int ray_mesh_intersect(Ray ray, Mesh *mesh, float *t, Vec3 *normal)
 	return 0;
 }
 
-
 static bool ray_surface_intersect(Ray ray, Surface *surf, Hit *hit)
 {
 	float ts[2] = {-HUGE_VAL, -HUGE_VAL}, t;
-	Vec3 tnormals[2], tnormal;
+	Vec3 tnormals[2] = {{0,0,0},{0,0,0}}, tnormal;
 	Ray tray;
 	Vec4 o4, d4;
 	Mat4 normal_matrix;
@@ -346,6 +375,9 @@ static bool ray_surface_intersect(Ray ray, Surface *surf, Hit *hit)
 
 	switch(shape->type)
 	{
+	case SHAPE_PLANE:
+		hits = ray_plane_intersect(tray, shape->u.plane, ts, tnormals);
+		break;
 	case SHAPE_SPHERE:
 		hits = ray_sphere_intersect(tray, shape->u.sphere, ts, tnormals);
 		break;
@@ -364,6 +396,8 @@ static bool ray_surface_intersect(Ray ray, Surface *surf, Hit *hit)
 		break;
 	}
 
+	/* We're looking for the smallest hit that is between the near and far
+	 * planes of the ray. */
 	if (hits == 0)
 		return false;
 	if (hits == 1)
@@ -375,19 +409,19 @@ static bool ray_surface_intersect(Ray ray, Surface *surf, Hit *hit)
 		tnormal = tnormals[0];
 	} else if (hits == 2)
 	{
-		float near = ray.near;
-		float far = ray.far;
+		bool t0_ok = ts[0] >= ray.near && ts[0] <= ray.far;
+		bool t1_ok = ts[1] >= ray.near && ts[1] <= ray.far;
 
-		     if ( (ts[0] < near || ts[0] > far) &&  (ts[1] < near || ts[1] > far))
+		     if (!t0_ok &&  !t1_ok)
 		{
 			return false;
 		}
-		else if (!(ts[0] < near || ts[0] > far) &&  (ts[1] < near || ts[1] > far))
+		else if (t0_ok && !t1_ok)
 		{
 			t = ts[0];
 			tnormal = tnormals[0];
 		}
-		else if ( (ts[0] < near || ts[0] > far) && !(ts[1] < near || ts[1] > far))
+		else if (!t0_ok && t1_ok)
 		{
 			t = ts[1];
 			tnormal = tnormals[1];
@@ -412,115 +446,96 @@ static bool ray_surface_intersect(Ray ray, Surface *surf, Hit *hit)
 
 	hit->t = t;
 	hit->position = vec3_add(ray.origin, vec3_scale(t, ray.direction));
-	hit->normal = vec3_normalize(mat4_transform3(normal_matrix, tnormal));
+	hit->normal = vec3_normalize(mat4_transform3_hetero(normal_matrix, tnormal));
+	return true;
+}
+
+static bool ray_bbox_test(Ray ray, BBox bbox)
+{
+	float xmin = bbox.xmin, xmax = bbox.xmax;
+	float ymin = bbox.ymin, ymax = bbox.ymax;
+	float zmin = bbox.zmin, zmax = bbox.zmax;
+	float txmin, txmax, tymin, tymax, tzmin, tzmax;
+	float xd = ray.direction.x, yd = ray.direction.y, zd = ray.direction.z;
+	float xe = ray.origin.x,    ye = ray.origin.y,    ze = ray.origin.z;
+	float xa, ya, za;
+
+	xa = 1.0/xd;
+	if (xa >= 0)
+	{
+		txmin = (xmin - xe)*xa;
+		txmax = (xmax - xe)*xa;
+	} else
+	{
+		txmin = (xmax - xe)*xa;
+		txmax = (xmin - xe)*xa;
+	}
+
+	ya = 1.0/yd;
+	if (ya >= 0)
+	{
+		tymin = (ymin - ye)*ya;
+		tymax = (ymax - ye)*ya;
+	} else
+	{
+		tymin = (ymax - ye)*ya;
+		tymax = (ymin - ye)*ya;
+	}
+
+	za = 1.0/zd;
+	if (za >= 0)
+	{
+		tzmin = (zmin - ze)*za;
+		tzmax = (zmax - ze)*za;
+	} else
+	{
+		tzmin = (zmax - ze)*za;
+		tzmax = (zmin - ze)*za;
+	}
+
+	assert(txmin < txmax);
+	assert(tymin < tymax);
+	assert(tzmin < tzmax);
+
+	if ((txmin > tymax) || (tymin > txmax))
+		return false;
+
+	if ((tymin > tzmax) || (tzmin > tymax))
+		return false;
+
+	if ((tzmin > txmax) || (txmin > tzmax))
+		return false;
+
 	return true;
 }
 
 bool ray_intersect(Ray ray, Hit *hit)
 {
-	Hit testhit;
-	Surface *surface = scene->root;
+	Hit test_hit;
+	Surface *surface;
 
 	hit->surface = NULL;
 	hit->t = HUGE_VAL;
 
-	while (surface)
+	for (surface = scene->root; surface; surface = surface->next)
 	{
-		testhit.surface = surface;
-		if (ray_surface_intersect(ray, surface, &testhit))
+		/* A bounding box test can give false positives but never
+		 * false negatives. */
+		if (!ray_bbox_test(ray, surface->bbox))
+			continue;
+
+		test_hit.surface = surface;
+		if (ray_surface_intersect(ray, surface, &test_hit))
 		{
-			if (hit->surface == NULL || testhit.t < hit->t)
+			if (hit->surface == NULL || test_hit.t < hit->t)
 			{
-				*hit = testhit;
+				*hit = test_hit;
 			}
 		}
-		surface = surface->next;
 	}
 
 	if (hit->surface != NULL)
 		return true;
 	else
 		return false;
-}
-
-/***********
- * Shading *
- ***********/
-
-static Colour hit_light_colour(Hit *hit, Light *light, Material *mat, Vec3 cam_dir,
-		Vec3 light_dir, Vec3 normal)
-{
-	Colour final, col1, col2;
-	Ray rray;
-
-	rray = rray;
-	hit = hit;
-
-	col1 = diff_colour(light, mat, cam_dir, light_dir, normal);
-	col2 = spec_colour(light, mat, cam_dir, light_dir, normal);
-	final = colour_add(col1, col2);
-
-	return final;
-}
-
-static Colour hit_colour(Hit *hit, Material *mat)
-{
-	Colour total;
-	int n = scene->num_lights;
-	Vec3 cam_pos, cam_dir;
-
-	cam_pos = scene->camera->position;
-	cam_dir = vec3_normalize(vec3_sub(cam_pos, hit->position));
-
-	total = BLACK;
-	for (int i = 0; i < n; i++)
-	{
-		Light *light = scene->light[i];
-		Vec3 light_dir;
-		Colour new;
-		Ray shadow_ray;
-		Hit dummy;
-
-		light_dir = vec3_normalize(vec3_sub(light->position, hit->position));
-
-		//if (mat->type == MATERIAL_DIFFUSE || mat->type == MATERIAL_PHONG)
-		{
-			shadow_ray.direction = light_dir;
-			shadow_ray.origin = vec3_add(hit->position,
-					vec3_scale(1e-3, shadow_ray.direction));
-			shadow_ray.near = 0;
-			shadow_ray.far = vec3_length(vec3_sub(light->position, hit->position));
-			if (ray_intersect(shadow_ray, &dummy))
-				continue;
-		}
-
-		new = hit_light_colour(hit, light, mat, cam_dir, light_dir,
-				hit->normal);
-		total = colour_add(total, new);
-	}
-
-	return total;
-}
-
-Colour ray_colour(Ray ray, int ttl)
-{
-	Hit hit;
-	bool ray_hit;
-	Material *mat;
-
-	/* Early exit */
-	if (ttl <= 0)
-	{
-		printf("TTL ran out\n");
-		return scene->background;
-	}
-
-	ray_hit = ray_intersect(ray, &hit);
-
-	if (!ray_hit)
-		return scene->background;
-
-	mat = hit.surface->material;
-
-	return hit_colour(&hit, mat);
 }

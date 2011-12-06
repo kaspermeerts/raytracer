@@ -11,10 +11,6 @@
 #include "shading.h"
 #include "ppm.h"
 
-/* TODO: Put in config structure */
-const int WIDTH =  600;
-const int HEIGHT = 600;
-
 SDL_Surface *display_surface;
 SDL_Surface *blit_surface;
 
@@ -40,7 +36,7 @@ static bool init_SDL(void)
 
 	flags = 0;
 	flags |= SDL_SWSURFACE;
-	display_surface = SDL_SetVideoMode(WIDTH, HEIGHT, 32, flags);
+	display_surface = SDL_SetVideoMode(config->width, config->height, 32, flags);
 	if (!display_surface)
 	{
 		printf("Couldn't set videomode: %s\n", SDL_GetError());
@@ -51,7 +47,8 @@ static bool init_SDL(void)
 	gmask = 0x0000FF00;
 	bmask = 0x00FF0000;
 	/* amask = 0xFF000000; */
-	blit_surface = SDL_CreateRGBSurface(SDL_SWSURFACE, WIDTH, HEIGHT, 32, rmask, gmask, bmask, 0);
+	blit_surface = SDL_CreateRGBSurface(SDL_SWSURFACE, config->width,
+			config->height, 32, rmask, gmask, bmask, 0);
 
 	return true;
 }
@@ -61,7 +58,7 @@ static void put_pixel(SDL_Surface *surface, int x, int y, Colour c)
 	int bpp = surface->format->BytesPerPixel;
 	uint8_t *p, r, g, b;
 
-	y = HEIGHT - 1 - y;
+	y = config->height - 1 - y;
 
 	p = (uint8_t *)surface->pixels + y * surface->pitch +x * bpp;
 	r = CLAMP(floorf(c.r * 256), 0, 255);
@@ -91,14 +88,14 @@ int main(int argc, char **argv)
 	if (sdl == NULL)
 		return 1;
 
-	buffer = calloc(WIDTH*HEIGHT, sizeof(Colour));
+	buffer = calloc(config->width*config->height, sizeof(Colour));
 
 	/* START */
 	start = clock();
 
-	for (int j = 0; j < HEIGHT; j++)
+	for (int j = 0; j < config->height; j++)
 	{
-	for (int i = 0; i < WIDTH; i++) /* Indentation doesn't help readability */
+	for (int i = 0; i < config->width; i++)
 	{
 		Camera *cam = scene->camera;
 		Colour c;
@@ -110,7 +107,7 @@ int main(int argc, char **argv)
 
 		c = ray_colour(r, 10);
 
-		buffer[WIDTH*j + i] = c;
+		buffer[config->width*j + i] = c;
 		put_pixel(display_surface, i, j, c);
 	}
 		SDL_Flip(display_surface);
@@ -126,10 +123,10 @@ int main(int argc, char **argv)
 	printf("Rendering complete in %d s %03d ms\n", (int) ms/1000, 
 			(int) (ms - floor(ms/1000)*1000) );
 	printf("%.2f kilopixels per second\n", 
-			(WIDTH*HEIGHT/1000.0/(ms/1000.0)));
+			(config->width*config->height/1000.0/(ms/1000.0)));
 
 	out = fopen("ray.ppm", "w");
-	ppm_write(buffer, WIDTH, HEIGHT, out);
+	ppm_write(buffer, config->width, config->height, out);
 	free(buffer);
 	fclose(out);
 

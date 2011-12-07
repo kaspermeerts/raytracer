@@ -290,11 +290,12 @@ static int ray_cone_intersect(Ray ray, Cone cone, float t[2], Vec3 normal[2])
 }
 
 /* This is basically Cramer's rule, but with vector calculus. */
-static int ray_triangle_intersect(Ray ray, Vec3 u, Vec3 v, Vec3 w,
+static bool ray_triangle_intersect(Ray ray, Vec3 u, Vec3 v, Vec3 w,
 		float *t, float *a, float *b, float *c)
 {
 	Vec3 edge1, edge2, tvec, pvec, qvec;
 	float det;
+	float aa, bb, cc;
 
 	edge1 = vec3_sub(v, u);
 	edge2 = vec3_sub(w, u);
@@ -303,23 +304,92 @@ static int ray_triangle_intersect(Ray ray, Vec3 u, Vec3 v, Vec3 w,
 	det = vec3_dot(edge1, pvec);
 
 	tvec = vec3_sub(ray.origin, u);
-	*b = vec3_dot(tvec, pvec) / det;
-	if (*b < 0.0 || *b > 1.0)
+	bb = vec3_dot(tvec, pvec) / det;
+	if (bb < 0.0 || bb > 1.0)
 		return false;
 
 	qvec = vec3_cross(tvec, edge1);
-	*c = vec3_dot(ray.direction, qvec) / det;
-	if (*c < 0.0 || *c + *b > 1.0)
-		return 0;
+	cc = vec3_dot(ray.direction, qvec) / det;
+	if (cc < 0.0 || cc + bb > 1.0)
+		return false;
 
+	aa = 1.0 - bb - cc;
+
+	*a = aa;
+	*b = bb;
+	*c = cc;
 	*t = vec3_dot(edge2, qvec) / det;
-	*a = 1.0 - *b - *c;
 
-	return 1;
+	return true;
+}
+
+/* We need the mesh parameter for access to the actual vertices */
+/* TODO: Give only the vertex list */
+static bool ray_kd_tree_intersect(Ray ray, Mesh *mesh, KdNode *node, float *t)
+{
+	Vec3 plane_normal[3];
+
+	/* Point in the direction of increasing coordinates */
+	plane_normal[0] = (Vec3) {1, 0, 0};
+	plane_normal[1] = (Vec3) {0, 1, 0};
+	plane_normal[2] = (Vec3) {0, 0, 1};
+
+	/* If we're in a leaf, there's nothing we can do but check all the
+	 * triangles */
+	if (node->leaf)
+	{
+		float tt;
+		*t = HUGE_VAL;
+		for (int i = 0; i < node->num_triangles; i++)
+		{
+			Triangle tri = node->triangle[i];
+			Vec3 u = mesh->vertex[tri.vertex_index[0]];
+			Vec3 v = mesh->vertex[tri.vertex_index[1]];
+			Vec3 w = mesh->vertex[tri.vertex_index[2]];
+			float dummy;
+
+			if (ray_triangle_intersect(ray, u, v, w, &tt, &dummy, &dummy, &dummy) && tt < *t)
+				*t = tt;
+		}
+		if (*t < HUGE_VAL)
+			return true;
+		else
+			return false;
+	}
+
+	/* TODO: Check ray.near & ray.far */
+
+	/* We're not in a leaf. Test the closest branch of the kd tree first */
+	if (vec3_dot(ray.direction, plane_normal[node->axis]) > 0.0)
+	{
+		/* The ray is direction in the same way as the plane normal.
+		 * Thus, we need to do the "left" branch first */
+		if (ray_kd_tree_intersect(ray, mesh, node->left, t))
+			return true;
+		else if (ray_kd_tree_intersect(ray, mesh, node->right, t))
+			return true;
+	} else
+	{
+		if (ray_kd_tree_intersect(ray, mesh, node->right, t))
+			return true;
+		else if (ray_kd_tree_intersect(ray, mesh, node->left, t))
+			return true;
+	}
+
+	return false;
 }
 
 static int ray_mesh_intersect(Ray ray, Mesh *mesh, float *t, Vec3 *normal)
 {
+#if 1
+	if (ray_kd_tree_intersect(ray, mesh, mesh->kd_tree, t))
+	{
+		*normal = (Vec3) {0, 1, 0};
+		return 1;
+	}
+
+	return 0;
+#else
 	float tt;
 	float a, b, c;
 
@@ -329,22 +399,23 @@ static int ray_mesh_intersect(Ray ray, Mesh *mesh, float *t, Vec3 *normal)
 		Vec3 u, v, w;
 		Triangle tri = mesh->triangle[i];
 
-		u = mesh->vertex[tri.vertex[0].vertex_index];
-		v = mesh->vertex[tri.vertex[1].vertex_index];
-		w = mesh->vertex[tri.vertex[2].vertex_index];
+		u = mesh->vertex[tri.vertex_index[0]];
+		v = mesh->vertex[tri.vertex_index[1]];
+		w = mesh->vertex[tri.vertex_index[2]];
 
-		if (ray_triangle_intersect(ray, u, v, w, &tt, &a, &b, &c) && tt < *t)
+		if (ray_triangle_intersect(ray, u, v, w, &tt, &a, &b, &c) && tt < *t && tt > ray.near && tt < ray.far)
 		{
 			*t = tt;
 			*normal = vec3_add(vec3_add(
-					vec3_scale(a, mesh->normal[tri.vertex[0].normal_index]),
-					vec3_scale(b, mesh->normal[tri.vertex[1].normal_index])),
-					vec3_scale(c, mesh->normal[tri.vertex[2].normal_index]));
+					vec3_scale(a, mesh->normal[tri.normal_index[0]]),
+					vec3_scale(b, mesh->normal[tri.normal_index[1]])),
+					vec3_scale(c, mesh->normal[tri.normal_index[2]]));
 		}
 	}
 	if (*t < HUGE_VAL)
 		return 1;
 	return 0;
+#endif
 }
 
 static bool ray_surface_intersect(Ray ray, Surface *surf, Hit *hit)

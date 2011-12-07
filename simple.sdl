@@ -3,14 +3,18 @@
 
 <Sdl>
    <Config
-		width = "512"
-		height = "512"
+		width = "640"
+		height = "640"
+		antialiasing = "false"
+		aa_samples = "4"
+		shadow_samples = "1"
+		max_reflections = "2"
 	/>
 
    <Cameras>
       <Camera position="5 5 5" direction="-1 -1 -1" up="0 1 0" fovy="45"
 	  		name="cam0" />
-      <Camera position="0 2 5" direction=" 0  0 -1" up="0 1 0" fovy="45"
+      <Camera position="0 0 3" direction=" 0  0 -1" up="0 1 0" fovy="45"
 	  		name="cam1" />
    </Cameras>
 
@@ -26,7 +30,11 @@
    </Geometry>
 
    <Materials>
-	  <Material diffuse_color="0.75 0.75 1" specular_color="1 1 1" specular_exponent="400" name="mat0" />
+	  <Material diffuse_color="0.75 0.75 1" specular_color="1 1 1"
+	  		specular_exponent="50" reflect="-0.3" name="mat0" />
+	  <Material diffuse_color="1.0 0.33 0.33" specular_color="1 1 1"
+	  		specular_exponent="50" reflect="-1" name="red" />
+
    </Materials>
 
 	<Scene camera="cam0" lights="light0" background="0.3 0.3 0.3">
@@ -34,6 +42,11 @@
 			<Translate vector="0 0 0">
 				<Shape geometry="teapot" material="mat0" />
 			</Translate>
+			<Translate vector="-3 0 0">
+				<Shape geometry="sphere" material="mat0" />
+			</Translate>
 		</Rotate>
 	</Scene>
 </Sdl>
+<!-- vim: ft=xml
+-->

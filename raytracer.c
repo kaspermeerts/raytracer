@@ -67,13 +67,13 @@ int main(int argc, char **argv)
 			{
 				r = camera_ray_aa(cam, i, j, k, 1);
 
-				c = colour_add(c, ray_colour(r, 10));
+				c = colour_add(c, ray_colour(r, config->max_reflections));
 			}
 			c = colour_scale(1.0/SQUARE(config->aa_samples), c);
 		} else
 		{
 			r = camera_ray(cam, i, j, 1);
-			c = ray_colour(r, 10);
+			c = ray_colour(r, config->max_reflections);
 		}
 
 		buffer[width*j + i] = c;

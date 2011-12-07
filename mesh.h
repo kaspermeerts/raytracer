@@ -4,12 +4,12 @@
 #include <stdbool.h>
 #include "cgmath.h"
 
+enum axis {X_AXIS, Y_AXIS, Z_AXIS};
+
 typedef struct Triangle {
-	struct {
-		int vertex_index;
-		int normal_index;
-		int texcoord_index;
-	} vertex[3];
+	int vertex_index[3];
+	int normal_index[3];
+	int texcoord_index[3];
 } Triangle;
 
 typedef struct TexCoord {
@@ -19,18 +19,34 @@ typedef struct TexCoord {
 typedef struct Mesh {
 	char *name;
 
-	bool has_normals, has_texcoords;
 	int num_vertices;
 	Vec3 *vertex;
+
+	bool has_normals;
 	int num_normals;
 	Vec3 *normal;
+
+	bool has_texcoords;
 	int num_texcoords;
 	TexCoord *texcoord;
 
 	int num_triangles;
 	Triangle *triangle;
+
+	struct KdNode *kd_tree;
 } Mesh;
 
+typedef struct KdNode {
+	bool leaf;
+	int axis;
+	struct KdNode *left;
+	struct KdNode *right;
+	float location;
+	int num_triangles;
+	Triangle *triangle;
+} KdNode;
+
 Mesh *mesh_load(const char *filename);
+void mesh_build_kd_tree(Mesh *mesh);
 
 #endif

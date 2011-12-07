@@ -3,22 +3,24 @@
 
 <Sdl>
 	<Config
-		width =  "512"
-		height = "512"
+		width =  "640"
+		height = "640"
 		antialiasing = "true"
-		aa_samples = "8"
-		shadow_samples = "8"
+		aa_samples = "4"
+		shadow_samples = "4"
+		max_reflections = "5"
 	/>
 
 	<Cameras>
-	<Camera position="-5 5 -5" direction="5 -5 5" up="0 1 0" fovy="45" 
+	<Camera position="0 8 -8" direction="0 -5 5" up="0 1 0" fovy="45" 
 	name="cam0" />
 	</Cameras>
 
 	<Lights>
 	<PointLight position="0 8 0" intensity="0.9" color="1 1 1" name="light0" />
 	<PointLight position="5 1 5" intensity="0.0" color="1 1 0" name="light1" />
-	<AreaLight position="-1 8 -1" edge1="0 0 2" edge2="2 0 0" name="arealight" />
+	<AreaLight intensity="0.5" position="-3 5 -3" edge1="0 0 2" edge2="2 0 0" name="arealight" />
+	<AreaLight intensity="0.5" position="5 5 5" edge1="0 0 2" edge2="2 0 0" name="camlight" />
 	</Lights>
 
 	<Geometry>
@@ -38,12 +40,12 @@
 	<Material diffuse_color="0.88 0.44 0.22" specular_color="1 1 1"
 			specular_exponent="400" name="redplastic" />
 	<Material diffuse_color="0.22 0.88 0.44" specular_color="1 1 1"
-			specular_exponent="400" name="greenplastic" />
+			specular_exponent="400" reflect="0.3" name="greenplastic" />
 	<Material diffuse_color="0.44 0.22 0.88" specular_color="1 1 1"
 			specular_exponent="400" name="blueplastic" />
 	</Materials>
 
-	<Scene camera="cam0" lights="arealight" background="0.8 0.8 0.8">
+	<Scene camera="cam0" lights="arealight,camlight" background="0.3 0.3 0.3">
 	<Translate vector="0 0 0">
 
 		<Translate vector=" 2  2 -2">

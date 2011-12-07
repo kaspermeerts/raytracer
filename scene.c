@@ -81,6 +81,7 @@ static bool import_config(xmlNode *node)
 	internal_config.antialiasing = parse_bool(xmlGetProp(node, "antialiasing"));
 	internal_config.aa_samples = parse_int(xmlGetProp(node, "aa_samples"));
 	internal_config.shadow_samples = parse_int(xmlGetProp(node, "shadow_samples"));
+	internal_config.max_reflections = parse_int(xmlGetProp(node, "max_reflections"));
 
 	config = &internal_config;
 	return true;
@@ -120,6 +121,8 @@ static bool import_cameras(Sdl *sdl, xmlNode *node, int n)
 	}
 	assert(i == n);
 
+	printf("Imported %d camera%s\n", n, (n == 1 ? "" : "s"));
+
 	return true;
 }
 
@@ -157,6 +160,7 @@ static bool import_lights(Sdl *sdl, xmlNode *node, int n)
 	}
 	assert(i == n);
 
+	printf("Imported %d light%s\n", n, (n == 1 ? "" : "s"));
 	return true;
 }
 
@@ -224,6 +228,8 @@ static bool import_shapes(Sdl *sdl, xmlNode *node, int n)
 
 	}
 	assert(i == n);
+
+	printf("Imported %d shape%s\n", n, (n == 1 ? "" : "s"));
 	return true;
 }
 
@@ -268,10 +274,12 @@ static bool import_materials(Sdl *sdl, xmlNode *node, int n)
 				parse_colour(xmlGetProp(cur_node, "specular_color"));
 		mat->shininess =
 				parse_double(xmlGetProp(cur_node, "specular_exponent"));
+		mat->reflect = parse_double(xmlGetProp(cur_node, "reflect"));
 
 		mat->name = strdup(xmlGetProp(cur_node, "name"));
 	}
 
+	printf("Imported %d material%s\n", n, (n == 1 ? "" : "s"));
 	return true;
 }
 
@@ -564,11 +572,8 @@ static bool import_scene(Sdl *sdl, xmlNode *node, int n)
 	}
 	matstack_destroy(model_matrix);
 
-	/* Postprocessing: build the bounding boxes */
-	for (Surface *surface = rw_scene->root; surface; surface = surface->next)
-	{
-		build_bbox(surface);
-	}
+	/* Postprocessing */
+	printf("Imported scene\n");
 	scene = &sdl->internal_scene;
 	return true;
 }
@@ -625,6 +630,19 @@ static bool import_sdl(Sdl *sdl, xmlDoc *doc)
 		{
 			printf("Unknown node: %s\n", node->name);
 			return false;
+		}
+	}
+
+	printf("Post-processing:\n");
+	/* Build bounding boxes and kd-trees */
+	for (Surface *surf = sdl->internal_scene.root; surf; surf = surf->next)
+	{
+		build_bbox(surf);
+
+		if (surf->shape->type == SHAPE_MESH)
+		{
+			printf("Building kd-tree for %s\n", surf->shape->name);
+			mesh_build_kd_tree(surf->shape->u.mesh);
 		}
 	}
 

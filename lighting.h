@@ -29,6 +29,7 @@ typedef struct Material {
 	Colour diffuse_colour;
 	Colour specular_colour;
 	int shininess;
+	float reflect;
 	char *name;
 } Material;
 

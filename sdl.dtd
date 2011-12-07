@@ -9,6 +9,7 @@
 	antialiasing				CDATA			"false"
 	aa_samples					CDATA			"4"
 	shadow_samples				CDATA			"9"
+	max_reflections				CDATA			"5"
 >
 
 <!ELEMENT Cameras (Camera+)>
@@ -124,6 +125,7 @@
 	diffuse_color				CDATA			#REQUIRED
 	specular_color				CDATA			"0 0 0"
 	specular_exponent			CDATA			"1"
+	reflect						CDATA			"0"
 	name						ID				#REQUIRED
 >
 

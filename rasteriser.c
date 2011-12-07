@@ -175,8 +175,8 @@ static void rasterise_mesh(Raster *raster, Mesh *mesh, Material *mat)
 
 		for (int j = 0; j < 3; j++)
 		{
-			Vec3 vertex = mesh->vertex[tri.vertex[j].vertex_index];
-			Vec3 normal = mesh->normal[tri.vertex[j].normal_index];
+			Vec3 vertex = mesh->vertex[tri.vertex_index[j]];
+			Vec3 normal = mesh->normal[tri.normal_index[j]];
 			pos[j] = vertex_shader(vertex, normal, j);
 			coord[j] = vec3_to_screen3(pos[j]);
 		}

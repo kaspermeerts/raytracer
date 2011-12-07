@@ -38,7 +38,6 @@ Colour light_mat_colour(Light *light, Material *mat, Vec3 cam_dir,
 {
 	Colour final, col1, col2;
 
-
 	col1 = diff_colour(light, mat, cam_dir, light_dir, normal);
 	col2 = spec_colour(light, mat, cam_dir, light_dir, normal);
 	final = colour_add(col1, col2);

@@ -81,11 +81,11 @@ int main(int argc, char **argv)
 	if (argc < 2)
 		return 1;
 
-	if (!init_SDL())
-		return 1;
-
 	sdl = sdl_load(argv[1]);
 	if (sdl == NULL)
+		return 1;
+
+	if (!init_SDL())
 		return 1;
 
 	buffer = calloc(config->width*config->height, sizeof(Colour));

@@ -3,8 +3,8 @@
 
 <Sdl>
    <Config
-		width = "640"
-		height = "640"
+		width =  "512"
+		height = "512"
 		antialiasing = "false"
 		aa_samples = "4"
 		shadow_samples = "1"
@@ -14,7 +14,7 @@
    <Cameras>
       <Camera position="5 5 5" direction="-1 -1 -1" up="0 1 0" fovy="45"
 	  		name="cam0" />
-      <Camera position="0 0 3" direction=" 0  0 -1" up="0 1 0" fovy="45"
+      <Camera position="1 6 1" direction="0 -1 0" up="0 0 1" fovy="45"
 	  		name="cam1" />
    </Cameras>
 
@@ -27,6 +27,8 @@
 	   <Mesh src="triangle.obj" name="tri" />
 	   <Mesh src="teapot.obj" name="teapot" />
 	   <Mesh src="sphere.obj" name="sphere" />
+	   <Mesh src="cube.obj" name="cube" />
+	   <Sphere radius="1" name="raysphere" />
    </Geometry>
 
    <Materials>
@@ -38,12 +40,14 @@
    </Materials>
 
 	<Scene camera="cam0" lights="light0" background="0.3 0.3 0.3">
-		<Rotate axis="0 1 0" angle="190" >
+		<Rotate axis="0 1 0" angle="495" >
 			<Translate vector="0 0 0">
+<!--
 				<Shape geometry="teapot" material="mat0" />
+-->
 			</Translate>
-			<Translate vector="-3 0 0">
-				<Shape geometry="sphere" material="mat0" />
+			<Translate vector="0 0 0">
+					<Shape geometry="teapot" material="mat0" />
 			</Translate>
 		</Rotate>
 	</Scene>

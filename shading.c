@@ -36,6 +36,7 @@ static Colour hit_light_colour(Hit *hit, Light *light, Vec3 cam_dir)
 
 		light_dir = vec3_normalize(vec3_sub(light_pos, hit->position));
 
+		/*
 		shadow_ray.direction = light_dir;
 		shadow_ray.origin = vec3_add(hit->position,
 				vec3_scale(1e-3, shadow_ray.direction));
@@ -43,6 +44,7 @@ static Colour hit_light_colour(Hit *hit, Light *light, Vec3 cam_dir)
 		shadow_ray.far = vec3_length(vec3_sub(light_pos, hit->position));
 		if (ray_intersect(shadow_ray, &dummy))
 			continue;
+		*/
 
 		diff_col = diff_colour(light, mat, cam_dir, light_dir, normal);
 		spec_col = spec_colour(light, mat, cam_dir, light_dir, normal);
@@ -56,7 +58,7 @@ static Colour hit_light_colour(Hit *hit, Light *light, Vec3 cam_dir)
 Colour ray_colour(Ray ray, int ttl)
 {
 	Hit hit;
-	Colour total, reflect_colour;
+	Colour total;
 	Vec3 cam_dir;
 
 	if (ttl < 0)
@@ -73,9 +75,11 @@ Colour ray_colour(Ray ray, int ttl)
 	for (int i = 0; i < scene->num_lights; i++)
 		total = colour_add(total, hit_light_colour(&hit, scene->light[i], cam_dir));
 
+	/*
 	if (hit.surface->material->reflect > 0.0)
 	{
 		Ray rray;
+		Colour reflect_colour;
 
 		rray.direction = vec3_reflect(ray.direction, hit.normal);
 		rray.origin = vec3_add(hit.position, vec3_scale(1e-4, rray.direction));
@@ -85,6 +89,7 @@ Colour ray_colour(Ray ray, int ttl)
 		reflect_colour = ray_colour(rray, ttl - 1);
 		total = colour_add(total, colour_scale(hit.surface->material->reflect, colour_mul(hit.surface->material->specular_colour, reflect_colour)));
 	}
+	*/
 
 	return total;
 }

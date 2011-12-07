@@ -233,19 +233,34 @@ Mesh *mesh_load(const char *filename)
  * kd-tree building *
  ********************/
 
-static void build_kd_subtree(Mesh *mesh, KdNode *tree, int depth)
+static KdNode *kd_node_new(void)
+{
+	KdNode *node;
+
+	node = malloc(sizeof(KdNode));
+	node->leaf = false;
+	node->axis = -1;
+	node->location = HUGE_VAL;
+	node->left = node->right = NULL;
+	node->num_triangles = 0;
+	node->triangle = NULL;
+
+	return node;
+}
+
+static void build_kd_subtree(Vec3 *vertex_list, KdNode *tree, int depth)
 {
 	float min, max;
 	int axis = depth % 3;
 	int lefti, righti;
 
-	printf("Node: %d triangles\n", tree->num_triangles);
-	if (tree->num_triangles <= 3 || depth == 6)
+	if (tree->num_triangles <= 1 || depth == 9)
 	{
 		tree->leaf = true;
 		tree->left = tree->right = NULL;
 		return;
 	}
+	tree->axis = axis;
 
 	/* First, we determine the midpoint */
 	min =  HUGE_VAL;
@@ -254,7 +269,7 @@ static void build_kd_subtree(Mesh *mesh, KdNode *tree, int depth)
 	{
 		for (int j = 0; j < 3; j++)
 		{
-			Vec3 vertex = mesh->vertex[tree->triangle[i].vertex_index[j]];
+			Vec3 vertex = vertex_list[tree->triangle[i].vertex_index[j]];
 			if (axis == 0)
 			{
 				if (vertex.x > max)
@@ -276,22 +291,21 @@ static void build_kd_subtree(Mesh *mesh, KdNode *tree, int depth)
 			}
 		}
 	}
-	printf("min: %g max: %g\n", min, max);
+	for (int i = 0; i < depth; i++) printf("    ");
+	printf("min: %g max: %g split: %g\n", min, max, (min+max)/2.0);
 
 	/* Now, we split the tree in two subtrees at this location */
-	tree->left = malloc(sizeof(KdNode));
-	tree->left->num_triangles = 0;
-	tree->right = malloc(sizeof(KdNode));
-	tree->right->num_triangles = 0;
 	tree->location = (min + max)/2.0;
-	printf("Splitting at %g\n", tree->location);
+
+	tree->left = kd_node_new();
+	tree->right = kd_node_new();
 	for (int i = 0; i < tree->num_triangles; i++)
 	{
 		Vec3 v[3];
 		bool v_left[3]; /* v_left[i]: is vertex i left or right */
 		for (int j = 0; j < 3; j++)
 		{
-			v[j] = mesh->vertex[mesh->triangle[i].vertex_index[j]];
+			v[j] = vertex_list[tree->triangle[i].vertex_index[j]];
 			if (axis == 0)
 				v_left[j] = v[j].x <= tree->location;
 			else if (axis == 1)
@@ -321,7 +335,7 @@ static void build_kd_subtree(Mesh *mesh, KdNode *tree, int depth)
 		bool v_left[3]; /* v_left[i]: is vertex i left or right */
 		for (int j = 0; j < 3; j++)
 		{
-			v[j] = mesh->vertex[mesh->triangle[i].vertex_index[j]];
+			v[j] = vertex_list[tree->triangle[i].vertex_index[j]];
 			if (axis == 0)
 				v_left[j] = v[j].x <= tree->location;
 			else if (axis == 1)
@@ -348,22 +362,28 @@ static void build_kd_subtree(Mesh *mesh, KdNode *tree, int depth)
 			righti++;
 		}
 	}
+	assert(tree->left->num_triangles == lefti);
+	assert(tree->right->num_triangles == righti);
 	free(tree->triangle);
 	tree->triangle = NULL;
 	tree->num_triangles = 0;
 	tree->leaf = false;
-	build_kd_subtree(mesh, tree->left, depth + 1);
-	build_kd_subtree(mesh, tree->right, depth + 1);
+	for (int i = 0; i < depth; i++) printf("    ");
+	printf("Left: %d triangles\n", tree->left->num_triangles);
+	build_kd_subtree(vertex_list, tree->left, depth + 1);
+	for (int i = 0; i < depth; i++) printf("    ");
+	printf("Right: %d triangles\n", tree->right->num_triangles);
+	build_kd_subtree(vertex_list, tree->right, depth + 1);
 	return;
 }
 
 void mesh_build_kd_tree(Mesh *mesh)
 {
-	mesh->kd_tree = malloc(sizeof(KdNode));
+	mesh->kd_tree = kd_node_new();
 	mesh->kd_tree->num_triangles = mesh->num_triangles;
 	mesh->kd_tree->triangle = calloc(mesh->kd_tree->num_triangles,
 			sizeof(Triangle));
 	memcpy(mesh->kd_tree->triangle, mesh->triangle, mesh->num_triangles * sizeof(Triangle));
-
-	build_kd_subtree(mesh, mesh->kd_tree, 0);
+	printf("Total triangles: %d\n", mesh->num_triangles);
+	build_kd_subtree(mesh->vertex, mesh->kd_tree, 0);
 }

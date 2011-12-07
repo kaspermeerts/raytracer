@@ -3,6 +3,14 @@
 #include <stdlib.h>
 #include "ray.h"
 
+struct TriangleHit {
+	float t;
+	float a;
+	float b;
+	float c;
+	Triangle triangle;
+};
+
 float drand(void)
 {
 	return rand()/((float) RAND_MAX);
@@ -291,7 +299,7 @@ static int ray_cone_intersect(Ray ray, Cone cone, float t[2], Vec3 normal[2])
 
 /* This is basically Cramer's rule, but with vector calculus. */
 static bool ray_triangle_intersect(Ray ray, Vec3 u, Vec3 v, Vec3 w,
-		float *t, float *a, float *b, float *c)
+		struct TriangleHit *tri_hit)
 {
 	Vec3 edge1, edge2, tvec, pvec, qvec;
 	float det;
@@ -315,64 +323,95 @@ static bool ray_triangle_intersect(Ray ray, Vec3 u, Vec3 v, Vec3 w,
 
 	aa = 1.0 - bb - cc;
 
-	*a = aa;
-	*b = bb;
-	*c = cc;
-	*t = vec3_dot(edge2, qvec) / det;
+	tri_hit->a = aa;
+	tri_hit->b = bb;
+	tri_hit->c = cc;
+	tri_hit->t = vec3_dot(edge2, qvec) / det;
 
 	return true;
 }
 
-/* We need the mesh parameter for access to the actual vertices */
-/* TODO: Give only the vertex list */
-static bool ray_kd_tree_intersect(Ray ray, Mesh *mesh, KdNode *node, float *t)
+static bool ray_kd_tree_intersect(Ray ray, Vec3 *vertex_list, KdNode *node,
+		struct TriangleHit *hit)
 {
-	Vec3 plane_normal[3];
+	Ray clip_ray1 = ray, clip_ray2 = ray;
+	float clip_t;
+	Vec3 plane_normal[3] =
+			{(Vec3) {1, 0, 0}, (Vec3) {0, 1, 0}, (Vec3) {0, 0, 1}};
 
-	/* Point in the direction of increasing coordinates */
-	plane_normal[0] = (Vec3) {1, 0, 0};
-	plane_normal[1] = (Vec3) {0, 1, 0};
-	plane_normal[2] = (Vec3) {0, 0, 1};
+	/*
+	if (ray.far < ray.near)
+		return false;*/
 
 	/* If we're in a leaf, there's nothing we can do but check all the
 	 * triangles */
 	if (node->leaf)
 	{
-		float tt;
-		*t = HUGE_VAL;
+		struct TriangleHit final_hit;
+		final_hit.t = HUGE_VAL;
 		for (int i = 0; i < node->num_triangles; i++)
 		{
+			struct TriangleHit tri_hit;
 			Triangle tri = node->triangle[i];
-			Vec3 u = mesh->vertex[tri.vertex_index[0]];
-			Vec3 v = mesh->vertex[tri.vertex_index[1]];
-			Vec3 w = mesh->vertex[tri.vertex_index[2]];
-			float dummy;
+			Vec3 u = vertex_list[tri.vertex_index[0]];
+			Vec3 v = vertex_list[tri.vertex_index[1]];
+			Vec3 w = vertex_list[tri.vertex_index[2]];
 
-			if (ray_triangle_intersect(ray, u, v, w, &tt, &dummy, &dummy, &dummy) && tt < *t)
-				*t = tt;
+			if (ray_triangle_intersect(ray, u, v, w, &tri_hit))
+			{
+				if (tri_hit.t >= ray.near && tri_hit.t < final_hit.t &&
+						tri_hit.t <= ray.far)
+				{
+					final_hit = tri_hit;
+					final_hit.triangle = tri;
+				}
+			}
 		}
-		if (*t < HUGE_VAL)
+		if (final_hit.t < HUGE_VAL)
+		{
+			*hit = final_hit;
 			return true;
+		}
 		else
+		{
 			return false;
+		}
 	}
 
-	/* TODO: Check ray.near & ray.far */
+	switch(node->axis)
+	{
+	case 0:
+		clip_t = (node->location - ray.origin.x)/ray.direction.x;
+		break;
+	case 1:
+		clip_t = (node->location - ray.origin.y)/ray.direction.y;
+		break;
+	case 2:
+		clip_t = (node->location - ray.origin.z)/ray.direction.z;
+		break;
+	default:
+		printf("AAAAAAAAAAAAAAAAAAAAGGGHH\n");
+		exit(1);
+		break;
+	}
+
+	clip_ray1.near = ray.near;
+	clip_ray1.far = clip_t;
+	clip_ray2.near = clip_t;
+	clip_ray2.far = ray.far;
 
 	/* We're not in a leaf. Test the closest branch of the kd tree first */
 	if (vec3_dot(ray.direction, plane_normal[node->axis]) > 0.0)
 	{
-		/* The ray is direction in the same way as the plane normal.
-		 * Thus, we need to do the "left" branch first */
-		if (ray_kd_tree_intersect(ray, mesh, node->left, t))
+		if (ray_kd_tree_intersect(clip_ray1, vertex_list, node->left, hit))
 			return true;
-		else if (ray_kd_tree_intersect(ray, mesh, node->right, t))
+		else if (ray_kd_tree_intersect(clip_ray2, vertex_list, node->right, hit))
 			return true;
 	} else
 	{
-		if (ray_kd_tree_intersect(ray, mesh, node->right, t))
+		if (ray_kd_tree_intersect(clip_ray1, vertex_list, node->right, hit))
 			return true;
-		else if (ray_kd_tree_intersect(ray, mesh, node->left, t))
+		else if (ray_kd_tree_intersect(clip_ray2, vertex_list, node->left, hit))
 			return true;
 	}
 
@@ -381,17 +420,21 @@ static bool ray_kd_tree_intersect(Ray ray, Mesh *mesh, KdNode *node, float *t)
 
 static int ray_mesh_intersect(Ray ray, Mesh *mesh, float *t, Vec3 *normal)
 {
+	struct TriangleHit tri_hit;
 #if 1
-	if (ray_kd_tree_intersect(ray, mesh, mesh->kd_tree, t))
+	if (ray_kd_tree_intersect(ray, mesh->vertex, mesh->kd_tree, &tri_hit))
 	{
-		*normal = (Vec3) {0, 1, 0};
+		Triangle tri = tri_hit.triangle;
+		*t = tri_hit.t;
+		*normal = vec3_add(vec3_add(
+				vec3_scale(tri_hit.a, mesh->normal[tri.normal_index[0]]),
+				vec3_scale(tri_hit.b, mesh->normal[tri.normal_index[1]])),
+				vec3_scale(tri_hit.c, mesh->normal[tri.normal_index[2]]));
 		return 1;
 	}
 
 	return 0;
 #else
-	float tt;
-	float a, b, c;
 
 	*t = HUGE_VAL;
 	for (int i = 0; i < mesh->num_triangles; i++)
@@ -403,13 +446,13 @@ static int ray_mesh_intersect(Ray ray, Mesh *mesh, float *t, Vec3 *normal)
 		v = mesh->vertex[tri.vertex_index[1]];
 		w = mesh->vertex[tri.vertex_index[2]];
 
-		if (ray_triangle_intersect(ray, u, v, w, &tt, &a, &b, &c) && tt < *t && tt > ray.near && tt < ray.far)
+		if (ray_triangle_intersect(ray, u, v, w, &tri_hit) && tri_hit.t < *t)
 		{
-			*t = tt;
+			*t = tri_hit.t;
 			*normal = vec3_add(vec3_add(
-					vec3_scale(a, mesh->normal[tri.normal_index[0]]),
-					vec3_scale(b, mesh->normal[tri.normal_index[1]])),
-					vec3_scale(c, mesh->normal[tri.normal_index[2]]));
+					vec3_scale(tri_hit.a, mesh->normal[tri.normal_index[0]]),
+					vec3_scale(tri_hit.b, mesh->normal[tri.normal_index[1]])),
+					vec3_scale(tri_hit.c, mesh->normal[tri.normal_index[2]]));
 		}
 	}
 	if (*t < HUGE_VAL)
@@ -423,7 +466,6 @@ static bool ray_surface_intersect(Ray ray, Surface *surf, Hit *hit)
 	float ts[2] = {-HUGE_VAL, -HUGE_VAL}, t;
 	Vec3 tnormals[2] = {{0,0,0},{0,0,0}}, tnormal;
 	Ray tray;
-	Vec4 o4, d4;
 	Mat4 normal_matrix;
 	Shape *shape = surf->shape;
 	int hits;
@@ -431,16 +473,8 @@ static bool ray_surface_intersect(Ray ray, Surface *surf, Hit *hit)
 	mat4_copy(normal_matrix, surf->world_to_model);
 	mat4_transpose(normal_matrix);
 
-	o4 = vec4_from_vec3(ray.origin,    1.0);
-	d4 = vec4_from_vec3(ray.direction, 0.0);
-
-	o4 = mat4_transform(surf->world_to_model, o4);
-	d4 = mat4_transform(surf->world_to_model, d4);
-
-	tray.origin = vec4_homogeneous_divide(o4);
-	tray.direction.x = d4.x;
-	tray.direction.y = d4.y;
-	tray.direction.z = d4.z;
+	tray.origin = mat4_transform3_homo(surf->world_to_model, ray.origin);
+	tray.direction = mat4_transform3_hetero(surf->world_to_model, ray.direction);
 	tray.near = ray.near;
 	tray.far = ray.far;
 
@@ -564,9 +598,9 @@ static bool ray_bbox_test(Ray ray, BBox bbox)
 		tzmax = (zmin - ze)*za;
 	}
 
-	assert(txmin < txmax);
-	assert(tymin < tymax);
-	assert(tzmin < tzmax);
+	assert(txmin <= txmax);
+	assert(tymin <= tymax);
+	assert(tzmin <= tzmax);
 
 	if ((txmin > tymax) || (tymin > txmax))
 		return false;

@@ -1,6 +1,12 @@
+#include <stdio.h>
 #include <math.h>
 
 #include "vector.h"
+
+void vec3_print(Vec3 v)
+{
+	printf("%g %g %g\n", v.x, v.y, v.z);
+}
 
 Vec3 vec3_add(Vec3 a, Vec3 b)
 {

@@ -12,23 +12,27 @@
 	/>
 
    <Cameras>
-      <Camera position="5 5 5" direction="-1 -1 -1" up="0 1 0" fovy="45"
+      <Camera position="3 3 3" direction="-1 -1 -1" up="0 1 0" fovy="45"
 	  		name="cam0" />
-      <Camera position="1 6 1" direction="0 -1 0" up="0 0 1" fovy="45"
+      <Camera position="0 1 4" direction="0 -1 -4" up="0 1 0" fovy="45"
 	  		name="cam1" />
    </Cameras>
 
    <Lights>
       <PointLight position="5 5 5" intensity="1" color="1 1 1" name="light0" />
-	  <PointLight position="0 2 2" intensity="1" color="1 1 0" name="light1" />
+	  <PointLight position="0 -5 0" intensity="1" color="1 1 0" name="light1" />
    </Lights>
 
    <Geometry>
-	   <Mesh src="triangle.obj" name="tri" />
+	   <!--
 	   <Mesh src="teapot.obj" name="teapot" />
 	   <Mesh src="sphere.obj" name="sphere" />
+	   -->
+	   <Mesh src="cone.obj" name="cone" />
+	   <Mesh src="simple.obj" name="simple" />
 	   <Mesh src="cube.obj" name="cube" />
-	   <Sphere radius="1" name="raysphere" />
+	   <Mesh src="torus.obj" name="torus" />
+	   <Mesh src="cylinder.obj" name="cylinder" />
    </Geometry>
 
    <Materials>
@@ -39,15 +43,16 @@
 
    </Materials>
 
-	<Scene camera="cam0" lights="light0" background="0.3 0.3 0.3">
-		<Rotate axis="0 1 0" angle="495" >
+	<Scene camera="cam0" lights="light0,light1" background="0.3 0.3 0.3">
+<!--		<Rotate axis="0 1 1" angle="119" > -->
+			<Rotate axis="0 1 0" angle="40" >
 			<Translate vector="0 0 0">
 <!--
 				<Shape geometry="teapot" material="mat0" />
 -->
 			</Translate>
 			<Translate vector="0 0 0">
-					<Shape geometry="teapot" material="mat0" />
+					<Shape geometry="cylinder" material="mat0" />
 			</Translate>
 		</Rotate>
 	</Scene>

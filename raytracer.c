@@ -25,7 +25,7 @@ static void print_progressbar(int progress, int total)
 		printf(" ");
 	printf("]");
 	printf("\r");
-
+	fflush(stdout);
 }
 
 int main(int argc, char **argv)

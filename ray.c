@@ -334,6 +334,8 @@ static bool ray_triangle_intersect(Ray ray, Vec3 u, Vec3 v, Vec3 w,
 static bool ray_kd_tree_intersect(Ray ray, Vec3 *vertex_list, KdNode *node,
 		struct TriangleHit *hit)
 {
+	struct TriangleHit hit_near, hit_far;
+	bool did_near, did_far;
 	Ray clip_ray1 = ray, clip_ray2 = ray;
 	float clip_t;
 	Vec3 plane_normal[3] =
@@ -359,7 +361,7 @@ static bool ray_kd_tree_intersect(Ray ray, Vec3 *vertex_list, KdNode *node,
 
 			if (ray_triangle_intersect(ray, u, v, w, &tri_hit))
 			{
-				if (tri_hit.t >= ray.near && tri_hit.t < final_hit.t &&
+				if (tri_hit.t >= ray.near && tri_hit.t <= final_hit.t &&
 						tri_hit.t <= ray.far)
 				{
 					final_hit = tri_hit;
@@ -396,23 +398,64 @@ static bool ray_kd_tree_intersect(Ray ray, Vec3 *vertex_list, KdNode *node,
 	}
 
 	clip_ray1.near = ray.near;
-	clip_ray1.far = clip_t;
-	clip_ray2.near = clip_t;
+	clip_ray1.far = ray.far;
+	clip_ray2.near = ray.near;
 	clip_ray2.far = ray.far;
-
-	/* We're not in a leaf. Test the closest branch of the kd tree first */
-	if (vec3_dot(ray.direction, plane_normal[node->axis]) > 0.0)
+	if (vec3_dot(ray.direction, plane_normal[node->axis]) >= 0.0)
 	{
-		if (ray_kd_tree_intersect(clip_ray1, vertex_list, node->left, hit))
-			return true;
-		else if (ray_kd_tree_intersect(clip_ray2, vertex_list, node->right, hit))
-			return true;
+
+		did_near = ray_kd_tree_intersect(clip_ray1, vertex_list, node->left,
+				&hit_near);
+		did_far = ray_kd_tree_intersect(clip_ray2, vertex_list, node->right,
+				&hit_far);
+		/*
+		if (didl && didr)
+		{
+			if (hitr.t < hitl.t)
+			{
+				printf("%d\n", node->axis);
+				printf("%g\n", node->location);
+				vec3_print(ray.direction);
+				vec3_print(plane_normal[node->axis]);
+				vec3_print(vec3_add(ray.origin, vec3_scale(hitl.t, ray.direction)));
+				vec3_print(vec3_add(ray.origin, vec3_scale(hitr.t, ray.direction)));
+				printf("%g\n", vec3_dot(ray.direction, plane_normal[node->axis]));
+				puts("ERROR");
+				return false;
+			}
+		}
+		*/
+
+
 	} else
 	{
+		did_near = ray_kd_tree_intersect(clip_ray1, vertex_list, node->right,
+				&hit_near);
+		did_far = ray_kd_tree_intersect(clip_ray2, vertex_list, node->left,
+				&hit_far);
+				/*
 		if (ray_kd_tree_intersect(clip_ray1, vertex_list, node->right, hit))
 			return true;
-		else if (ray_kd_tree_intersect(clip_ray2, vertex_list, node->left, hit))
-			return true;
+		if (ray_kd_tree_intersect(clip_ray2, vertex_list, node->left, hit))
+			return true;*/
+	}
+
+	if (did_near && did_far)
+	{
+		if (hit_far.t < hit_near.t)
+			*hit = hit_far;
+		else
+			*hit = hit_near;
+
+		return true;
+	} else if (did_near && !did_far)
+	{
+		*hit = hit_near;
+		return true;
+	} else if (!did_near && did_far)
+	{
+		*hit = hit_far;
+		return true;
 	}
 
 	return false;

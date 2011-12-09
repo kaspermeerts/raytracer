@@ -11,8 +11,6 @@ static Colour hit_light_colour(Hit *hit, Light *light, Vec3 cam_dir)
 	Vec3 light_dir;
 	Vec3 light_pos;
 	Colour light_total;
-	Ray shadow_ray;
-	Hit dummy;
 	int n;
 
 	light_total = BLACK;
@@ -20,6 +18,8 @@ static Colour hit_light_colour(Hit *hit, Light *light, Vec3 cam_dir)
 	n = light->type == LIGHT_AREA ? config->shadow_samples : 1;
 	for (int j = 0; j < SQUARE(n); j++)
 	{
+		//Ray shadow_ray;
+		//Hit dummy;
 		Colour diff_col, spec_col;
 		int p, q;
 		float alpha, beta;

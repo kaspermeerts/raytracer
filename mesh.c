@@ -254,7 +254,7 @@ static void build_kd_subtree(Vec3 *vertex_list, KdNode *tree, int depth)
 	int axis = depth % 3;
 	int lefti, righti;
 
-	if (tree->num_triangles <= 1 || depth == 9)
+	if (tree->num_triangles <= 1 || depth == 7)
 	{
 		tree->leaf = true;
 		tree->left = tree->right = NULL;
@@ -314,15 +314,10 @@ static void build_kd_subtree(Vec3 *vertex_list, KdNode *tree, int depth)
 				v_left[j] = v[j].z <= tree->location;
 		}
 
-		if (v_left[0] && v_left[1] && v_left[2])
+		if (v_left[0] || v_left[1] || v_left[2])
 			tree->left->num_triangles++;
-		else if (!v_left[0] && !v_left[1] && !v_left[2])
+		if (!v_left[0] || !v_left[1] || !v_left[2])
 			tree->right->num_triangles++;
-		else
-		{
-			tree->left->num_triangles++;
-			tree->right->num_triangles++;
-		}
 	}
 
 	tree->left->triangle = calloc(tree->left->num_triangles, sizeof(Triangle));
@@ -344,20 +339,13 @@ static void build_kd_subtree(Vec3 *vertex_list, KdNode *tree, int depth)
 				v_left[j] = v[j].z <= tree->location;
 		}
 
-		if (v_left[0] && v_left[1] && v_left[2])
+		if (v_left[0] || v_left[1] || v_left[2])
 		{
 			tree->left->triangle[lefti] = tree->triangle[i];
 			lefti++;
 		}
-		else if (!v_left[0] && !v_left[1] && !v_left[2])
+		if (!v_left[0] || !v_left[1] || !v_left[2])
 		{
-			tree->right->triangle[righti] = tree->triangle[i];
-			righti++;
-		}
-		else
-		{
-			tree->left->triangle[lefti] = tree->triangle[i];
-			lefti++;
 			tree->right->triangle[righti] = tree->triangle[i];
 			righti++;
 		}

@@ -1,7 +1,6 @@
-lex.yy.c
-lex.yy.h
 *ppm
 raytracer
 rasteriser
 rayviewer
 treetest
+*.gcda

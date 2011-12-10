@@ -38,7 +38,7 @@ typedef struct Mesh {
 
 typedef struct KdNode {
 	bool leaf;
-	int axis;
+	enum axis axis;
 	struct KdNode *left;
 	struct KdNode *right;
 	float location;

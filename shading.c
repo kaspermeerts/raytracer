@@ -18,8 +18,8 @@ static Colour hit_light_colour(Hit *hit, Light *light, Vec3 cam_dir)
 	n = light->type == LIGHT_AREA ? config->shadow_samples : 1;
 	for (int j = 0; j < SQUARE(n); j++)
 	{
-		//Ray shadow_ray;
-		//Hit dummy;
+		Ray shadow_ray;
+		Hit dummy;
 		Colour diff_col, spec_col;
 		int p, q;
 		float alpha, beta;
@@ -36,15 +36,13 @@ static Colour hit_light_colour(Hit *hit, Light *light, Vec3 cam_dir)
 
 		light_dir = vec3_normalize(vec3_sub(light_pos, hit->position));
 
-		/*
 		shadow_ray.direction = light_dir;
 		shadow_ray.origin = vec3_add(hit->position,
-				vec3_scale(1e-3, shadow_ray.direction));
+				vec3_scale(1e-1, shadow_ray.direction));
 		shadow_ray.near = 0;
 		shadow_ray.far = vec3_length(vec3_sub(light_pos, hit->position));
 		if (ray_intersect(shadow_ray, &dummy))
 			continue;
-		*/
 
 		diff_col = diff_colour(light, mat, cam_dir, light_dir, normal);
 		spec_col = spec_colour(light, mat, cam_dir, light_dir, normal);

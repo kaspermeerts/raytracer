@@ -3,8 +3,7 @@
 
 #include <stdbool.h>
 #include "cgmath.h"
-
-enum axis {X_AXIS, Y_AXIS, Z_AXIS};
+#include "bbox.h"
 
 typedef struct Triangle {
 	int vertex_index[3];
@@ -38,7 +37,7 @@ typedef struct Mesh {
 
 typedef struct KdNode {
 	bool leaf;
-	enum axis axis;
+	enum AXIS axis;
 	struct KdNode *left;
 	struct KdNode *right;
 	float location;

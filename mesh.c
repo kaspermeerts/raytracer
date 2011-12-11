@@ -248,54 +248,12 @@ static KdNode *kd_node_new(void)
 	return node;
 }
 
-static void build_kd_subtree(Vec3 *vertex_list, KdNode *tree, int depth,
-		enum axis axis)
+static void split_kd_tree(Vec3 *vertex_list, KdNode *tree, enum AXIS axis,
+		float location)
 {
-	float min, max;
 	int lefti, righti;
-	enum axis next_axis;
 
-	if (tree->num_triangles <= 1 || depth == 5)
-	{
-		tree->leaf = true;
-		tree->left = tree->right = NULL;
-		return;
-	}
-	tree->axis = axis;
-
-	/* First, we determine the midpoint */
-	min =  HUGE_VAL;
-	max = -HUGE_VAL;
-	for (int i = 0; i < tree->num_triangles; i++)
-	{
-		for (int j = 0; j < 3; j++)
-		{
-			Vec3 vertex = vertex_list[tree->triangle[i].vertex_index[j]];
-			if (axis == X_AXIS)
-			{
-				if (vertex.x > max)
-					max = vertex.x;
-				if (vertex.x < min)
-					min = vertex.x;
-			} else if (axis == Y_AXIS)
-			{
-				if (vertex.y > max)
-					max = vertex.y;
-				if (vertex.y < min)
-					min = vertex.y;
-			} else if (axis == Z_AXIS)
-			{
-				if (vertex.z > max)
-					max = vertex.z;
-				if (vertex.z < min)
-					min = vertex.z;
-			}
-		}
-	}
-
-	/* Now, we split the tree in two subtrees at this location */
-	tree->location = (min + max)/2.0;
-
+	tree->location = location;
 	tree->left = kd_node_new();
 	tree->right = kd_node_new();
 	for (int i = 0; i < tree->num_triangles; i++)
@@ -355,6 +313,90 @@ static void build_kd_subtree(Vec3 *vertex_list, KdNode *tree, int depth,
 	tree->triangle = NULL;
 	tree->num_triangles = 0;
 	tree->leaf = false;
+}
+
+static float calculate_cost(Vec3 *vertex_list, KdNode *tree, enum AXIS axis,
+		float location, BBox tree_box)
+{
+	int left_tris, right_tris;
+	BBox left_box, right_box;
+	
+	for (int i = 0; i < tree->num_triangles; i++)
+	{
+		Triangle tri = tree->triangle[i];
+		Vec3 v[3];
+		bool v_left[3]; /* v_left[i]: is vertex i left or right */
+		for (int j = 0; j < 3; j++)
+		{
+			v[j] = vertex_list[tri.vertex_index[j]];
+			if (axis == X_AXIS)
+				v_left[j] = v[j].x <= location;
+			else if (axis == Y_AXIS)
+				v_left[j] = v[j].y <= location;
+			else /* axis == Z_AXIS */
+				v_left[j] = v[j].z <= location;
+		}
+
+		if (v_left[0] || v_left[1] || v_left[2])
+			left_tris++;
+		if (!v_left[0] || !v_left[1] || !v_left[2])
+			right_tris++;
+	}
+
+	bbox_split(tree_box, axis, location, &left_box, &right_box);
+	return left_tris * bbox_surface_area(left_box) +
+			right_tris * bbox_surface_area(right_box);
+
+}
+
+static void build_kd_subtree(Vec3 *vertex_list, KdNode *tree, int depth,
+		enum AXIS axis, BBox bbox)
+{
+	enum AXIS next_axis;
+	float best_cost, best_location;
+	BBox left_box, right_box;
+
+	if (tree->num_triangles <= 10 || depth == 10)
+	{
+		tree->leaf = true;
+		tree->left = tree->right = NULL;
+		return;
+	}
+	tree->axis = axis;
+
+	/* Determine the optimum location using the surface area heuristic */
+	best_cost = HUGE_VAL;
+	best_location = 0;
+	for (int i = 0; i < tree->num_triangles; i++)
+	{
+		Triangle tri = tree->triangle[i];
+		for (int j = 0; j < 3; j++)
+		{
+			float loc, cost;
+			Vec3 v = vertex_list[tri.vertex_index[j]];
+
+			if (axis == X_AXIS)
+				loc = v.x;
+			else if (axis == Y_AXIS)
+				loc = v.y;
+			else
+				loc = v.z;
+
+			cost = calculate_cost(vertex_list, tree, axis, loc, bbox);
+			if (cost < best_cost)
+			{
+				best_cost = cost;
+				best_location = loc;
+			}
+		}
+	}
+
+	for (int i = 0; i < depth; i++) printf("    ");
+	printf("Best location: %g\n", best_location);
+
+	/* Now, split the tree in twain at this location */
+	split_kd_tree(vertex_list, tree, axis, best_location);
+	bbox_split(bbox, axis, best_location, &left_box, &right_box);
 
 	switch (axis)
 	{
@@ -372,21 +414,49 @@ static void build_kd_subtree(Vec3 *vertex_list, KdNode *tree, int depth,
 		exit(1);
 		break;
 	}
+
 	for (int i = 0; i < depth; i++) printf("    ");
 	printf("Left: %d triangles\n", tree->left->num_triangles);
-	build_kd_subtree(vertex_list, tree->left, depth + 1, next_axis);
+	build_kd_subtree(vertex_list, tree->left, depth + 1, next_axis, left_box);
 	for (int i = 0; i < depth; i++) printf("    ");
 	printf("Right: %d triangles\n", tree->right->num_triangles);
-	build_kd_subtree(vertex_list, tree->right, depth + 1, next_axis);
+	build_kd_subtree(vertex_list, tree->right, depth + 1, next_axis, right_box);
 }
 
 void mesh_build_kd_tree(Mesh *mesh)
 {
+	BBox bbox;
+
+	bbox.xmin = bbox.ymin = bbox.zmin =  HUGE_VAL;
+	bbox.xmax = bbox.ymax = bbox.zmax = -HUGE_VAL;
+
+	for (int i = 0; i < mesh->num_triangles; i++)
+	{
+		Triangle tri = mesh->triangle[i];
+		Vec3 v[3];
+		for (int j = 0; j < 3; j++)
+		{
+			v[j] = mesh->vertex[tri.vertex_index[j]];
+			if (v[j].x < bbox.xmin)
+				bbox.xmin = v[j].x;
+			if (v[j].x > bbox.xmax)
+				bbox.xmax = v[j].x;
+			if (v[j].y < bbox.ymin)
+				bbox.ymin = v[j].y;
+			if (v[j].y > bbox.ymax)
+				bbox.ymax = v[j].y;
+			if (v[j].z < bbox.zmin)
+				bbox.zmin = v[j].z;
+			if (v[j].z > bbox.zmax)
+				bbox.zmax = v[j].z;
+		}
+	}
 	mesh->kd_tree = kd_node_new();
 	mesh->kd_tree->num_triangles = mesh->num_triangles;
 	mesh->kd_tree->triangle = calloc(mesh->kd_tree->num_triangles,
 			sizeof(Triangle));
-	memcpy(mesh->kd_tree->triangle, mesh->triangle, mesh->num_triangles * sizeof(Triangle));
+	memcpy(mesh->kd_tree->triangle, mesh->triangle,
+			mesh->num_triangles * sizeof(Triangle));
 	printf("Total triangles: %d\n", mesh->num_triangles);
-	build_kd_subtree(mesh->vertex, mesh->kd_tree, 0, X_AXIS);
+	build_kd_subtree(mesh->vertex, mesh->kd_tree, 0, X_AXIS, bbox);
 }

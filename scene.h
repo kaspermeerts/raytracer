@@ -5,6 +5,7 @@
 #include "colour.h"
 #include "mesh.h"
 #include "lighting.h"
+#include "bbox.h"
 
 enum { MAX_LIGHTS=8 };
 
@@ -50,11 +51,6 @@ typedef struct Shape {
 	} u;
 	char *name;
 } Shape;
-
-typedef struct BBox {
-	float xmin, ymin, zmin;
-	float xmax, ymax, zmax;
-} BBox;
 
 typedef struct Surface {
 	Shape *shape;

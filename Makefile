@@ -4,7 +4,7 @@ WARNINGS = -Wextra -Wall -Wwrite-strings -Wshadow -Wpointer-arith -Wcast-qual -W
 #OPTIM = -ffast-math -O0
 OPTIM = -ffast-math -O4 -flto -finline-limit=2000000000
 CFLAGS = $(WARNINGS) $(DEFINES) $(OPTIM) -std=c99 -pipe -ggdb
-COMMON_SRC = colour.c vector.c quaternion.c matrix.c scene.c lighting.c ppm.c mesh.c
+COMMON_SRC = colour.c vector.c quaternion.c matrix.c scene.c lighting.c ppm.c mesh.c bbox.c
 RAY_SRC = ray.c shading.c $(COMMON_SRC)
 RASTER_SRC = raster.c $(COMMON_SRC)
 INCFLAGS = -I. `xml2-config --cflags`

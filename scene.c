@@ -572,7 +572,6 @@ static bool import_scene(Sdl *sdl, xmlNode *node, int n)
 	}
 	matstack_destroy(model_matrix);
 
-	/* Postprocessing */
 	printf("Imported scene\n");
 	scene = &sdl->internal_scene;
 	return true;

@@ -1,6 +1,8 @@
-*ppm
+*.a
+*.o
+*.ppm
+*.gcda
 raytracer
 rasteriser
 rayviewer
-treetest
-*.gcda
+png2ppm

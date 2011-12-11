@@ -1,21 +1,24 @@
 CC = gcc
 DEFINES =
 WARNINGS = -Wextra -Wall -Wwrite-strings -Wshadow -Wpointer-arith -Wcast-qual -Wstrict-prototypes -Wmissing-prototypes -Wstrict-aliasing -Wno-pointer-sign -pedantic
-#OPTIM = -ffast-math -O0
-OPTIM = -ffast-math -O4 -flto -finline-limit=2000000000 -DNDEBUG
+OPTIM = -ffast-math -O0
+#OPTIM = -ffast-math -O4 -flto -finline-limit=2000000000 -DNDEBUG
 CFLAGS = $(WARNINGS) $(DEFINES) $(OPTIM) -std=c99 -pipe -ggdb
 COMMON_SRC = colour.c vector.c quaternion.c matrix.c scene.c lighting.c ppm.c mesh.c bbox.c timer.c
 RAY_SRC = ray.c shading.c $(COMMON_SRC)
 RASTER_SRC = raster.c $(COMMON_SRC)
 INCFLAGS = -I. `xml2-config --cflags`
-LDFLAGS = -lm -Lobjreader -lobjreader `xml2-config --libs`
+LDFLAGS = -Lpnglite -lpnglite -lm -Lobjreader -lobjreader `xml2-config --libs`
 
 #all: treetest rayviewer raytracer rasteriser
-all: raytracer
+all: pnglite/libpnglite.a png2ppm raytracer
 
-treetest: treetest.c mesh.c
-	@echo "	CC treetest"
-	@$(CC) -o treetest treetest.c mesh.c $(CFLAGS) $(INCFLAGS) $(LDFLAGS)
+pnglite/libpnglite.a:
+	$(MAKE) -C pnglite libpnglite.a
+
+png2ppm: png2ppm.c ppm.c
+	@echo "	CC png2ppm"
+	@$(CC) -o png2ppm png2ppm.c ppm.c $(CFLAGS) $(INCFLAGS) $(LDFLAGS)
 
 rayviewer: rayviewer.c $(RAY_SRC)
 	@echo "	CC rayviewer"

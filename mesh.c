@@ -356,7 +356,7 @@ static void build_kd_subtree(Vec3 *vertex_list, KdNode *tree, int depth,
 	float best_cost, best_location;
 	BBox left_box, right_box;
 
-	if (tree->num_triangles <= 10 || depth == 10)
+	if (tree->num_triangles <= 10 || depth == 8)
 	{
 		tree->leaf = true;
 		tree->left = tree->right = NULL;

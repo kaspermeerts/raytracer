@@ -320,7 +320,7 @@ static float calculate_cost(Vec3 *vertex_list, KdNode *tree, enum AXIS axis,
 {
 	int left_tris, right_tris;
 	BBox left_box, right_box;
-	
+
 	for (int i = 0; i < tree->num_triangles; i++)
 	{
 		Triangle tri = tree->triangle[i];
@@ -391,9 +391,6 @@ static void build_kd_subtree(Vec3 *vertex_list, KdNode *tree, int depth,
 		}
 	}
 
-	for (int i = 0; i < depth; i++) printf("    ");
-	printf("Best location: %g\n", best_location);
-
 	/* Now, split the tree in twain at this location */
 	split_kd_tree(vertex_list, tree, axis, best_location);
 	bbox_split(bbox, axis, best_location, &left_box, &right_box);
@@ -415,11 +412,7 @@ static void build_kd_subtree(Vec3 *vertex_list, KdNode *tree, int depth,
 		break;
 	}
 
-	for (int i = 0; i < depth; i++) printf("    ");
-	printf("Left: %d triangles\n", tree->left->num_triangles);
 	build_kd_subtree(vertex_list, tree->left, depth + 1, next_axis, left_box);
-	for (int i = 0; i < depth; i++) printf("    ");
-	printf("Right: %d triangles\n", tree->right->num_triangles);
 	build_kd_subtree(vertex_list, tree->right, depth + 1, next_axis, right_box);
 }
 
@@ -457,6 +450,5 @@ void mesh_build_kd_tree(Mesh *mesh)
 			sizeof(Triangle));
 	memcpy(mesh->kd_tree->triangle, mesh->triangle,
 			mesh->num_triangles * sizeof(Triangle));
-	printf("Total triangles: %d\n", mesh->num_triangles);
 	build_kd_subtree(mesh->vertex, mesh->kd_tree, 0, X_AXIS, bbox);
 }

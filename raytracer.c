@@ -8,6 +8,7 @@
 #include "ray.h"
 #include "shading.h"
 #include "ppm.h"
+#include "timer.h"
 
 static void print_progressbar(int progress, int total)
 {
@@ -30,11 +31,10 @@ static void print_progressbar(int progress, int total)
 
 int main(int argc, char **argv)
 {
+	Timer *render_timer;
 	Sdl *sdl;
 	FILE *out;
 	Colour *buffer;
-	clock_t start, stop;
-	double ms;
 	int width, height;
 
 	if (argc < 2)
@@ -50,7 +50,7 @@ int main(int argc, char **argv)
 
 	srand(0x20071208);
 	/* START */
-	start = clock();
+	render_timer = timer_start("Rendering");
 
 	for (int j = 0; j < height; j++)
 	{
@@ -83,14 +83,11 @@ int main(int argc, char **argv)
 	printf("\n");
 
 	/* STOP */
-	stop = clock();
 
-	ms = ((stop - start)*1000.0)/CLOCKS_PER_SEC;
-	printf("Rendering complete in %d s %03d ms\n", (int) ms/1000, 
-			(int) (ms - floor(ms/1000)*1000) );
-	printf("%.2f kilopixels per second\n", 
-			(width*height/1000.0/(ms/1000.0)));
-
+	timer_stop(render_timer);
+	timer_diff_print(render_timer);
+	printf("%.2f kilopixels per second\n",
+			width*height/1000./(timer_diff(render_timer)));
 	out = fopen("ray.ppm", "w");
 	ppm_write(buffer, width, height, out);
 	free(buffer);

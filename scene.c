@@ -4,11 +4,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/time.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 
 #include "scene.h"
 #include "mesh.h"
+#include "timer.h"
 
 static Config internal_config;
 
@@ -121,8 +123,6 @@ static bool import_cameras(Sdl *sdl, xmlNode *node, int n)
 	}
 	assert(i == n);
 
-	printf("Imported %d camera%s\n", n, (n == 1 ? "" : "s"));
-
 	return true;
 }
 
@@ -160,7 +160,6 @@ static bool import_lights(Sdl *sdl, xmlNode *node, int n)
 	}
 	assert(i == n);
 
-	printf("Imported %d light%s\n", n, (n == 1 ? "" : "s"));
 	return true;
 }
 
@@ -229,7 +228,6 @@ static bool import_shapes(Sdl *sdl, xmlNode *node, int n)
 	}
 	assert(i == n);
 
-	printf("Imported %d shape%s\n", n, (n == 1 ? "" : "s"));
 	return true;
 }
 
@@ -279,7 +277,6 @@ static bool import_materials(Sdl *sdl, xmlNode *node, int n)
 		mat->name = strdup(xmlGetProp(cur_node, "name"));
 	}
 
-	printf("Imported %d material%s\n", n, (n == 1 ? "" : "s"));
 	return true;
 }
 
@@ -572,7 +569,6 @@ static bool import_scene(Sdl *sdl, xmlNode *node, int n)
 	}
 	matstack_destroy(model_matrix);
 
-	printf("Imported scene\n");
 	scene = &sdl->internal_scene;
 	return true;
 }
@@ -632,7 +628,6 @@ static bool import_sdl(Sdl *sdl, xmlDoc *doc)
 		}
 	}
 
-	printf("Post-processing:\n");
 	/* Build bounding boxes and kd-trees */
 	for (Surface *surf = sdl->internal_scene.root; surf; surf = surf->next)
 	{
@@ -640,8 +635,13 @@ static bool import_sdl(Sdl *sdl, xmlDoc *doc)
 
 		if (surf->shape->type == SHAPE_MESH)
 		{
+			Timer *kd_timer;
 			printf("Building kd-tree for %s\n", surf->shape->name);
+			kd_timer = timer_start("Building kd-tree");
 			mesh_build_kd_tree(surf->shape->u.mesh);
+			timer_stop(kd_timer);
+			timer_diff_print(kd_timer);
+			free(kd_timer);
 		}
 	}
 

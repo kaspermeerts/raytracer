@@ -377,7 +377,6 @@ static bool ray_kd_tree_intersect(Ray ray, Vec3 *vertex_list, KdNode *node,
 	/* In a leaf we have to check all triangles */
 	if (node->leaf)
 		return ray_kd_leaf_intersect(ray, vertex_list, node, hit);
-	/* else not in a leaf */
 
 	switch(node->axis)
 	{
@@ -396,11 +395,6 @@ static bool ray_kd_tree_intersect(Ray ray, Vec3 *vertex_list, KdNode *node,
 		break;
 	}
 
-	ray_near.near = ray.near;
-	ray_near.far = clip_t;
-	ray_far.near = clip_t;
-	ray_far.far = ray.far;
-
 	if (vec3_dot(ray.direction, plane_normal[node->axis]) >= 0.0)
 	{
 		node_near = node->left;
@@ -411,39 +405,34 @@ static bool ray_kd_tree_intersect(Ray ray, Vec3 *vertex_list, KdNode *node,
 		node_far = node->left;
 	}
 
-
+	/* The major performance improvement from using kd-trees
+	 * Don't check a branch of a tree if the ray can't possibly intersect it */
 	if (clip_t > ray.far)
-	{
-		did_near = ray_kd_tree_intersect(ray, vertex_list, node_near,
-				&hit_near);
-		*hit = hit_near;
-		return did_near;
-	}
+		return ray_kd_tree_intersect(ray, vertex_list, node_near, hit);
 	if (clip_t < ray.near)
+		return ray_kd_tree_intersect(ray, vertex_list, node_far, hit);
+
+	/* Split the ray in twain */
+	ray_near.near = ray.near; ray_near.far = clip_t;
+	ray_far.near  = clip_t;   ray_far.far  = ray.far;
+
+	/* The invariant of a kd-tree is that every point in the near node will
+	 * be closer than any point in the far node. So we start by checking the
+	 * near node and if we find an intersection inside it, we don't check the
+	 * far node anymore as it can't possible contain a closer intersection. */
+	did_near = ray_kd_tree_intersect(ray_near, vertex_list, node_near, &hit_near);
+	/* The test (hit_near.t < clip_t) is important, as it is possible a
+	 * primitive in the far node will intersect closer than this primitive,
+	 * which lies only partially in the near node. */
+	if (did_near && hit_near.t < clip_t)
 	{
-		did_far = ray_kd_tree_intersect(ray, vertex_list, node_far,
-				&hit_far);
-		*hit = hit_far;
-		return did_far;
+		*hit = hit_near;
+		return true;
 	}
 
-	did_near = ray_kd_tree_intersect(ray_near, vertex_list, node_near,
-			&hit_near);
 	did_far = ray_kd_tree_intersect(ray_far, vertex_list, node_far, &hit_far);
-	if (did_near)
-	{
-		if (hit_near.t > clip_t && did_far && hit_far.t < hit_near.t)
-			*hit = hit_far;
-		else
-			*hit = hit_near;
-		return true;
-	} else if (did_far)
-	{
-		*hit = hit_far;
-		return true;
-	}
-
-	return false;
+	*hit = hit_far;
+	return did_far;
 }
 
 static int ray_mesh_intersect(Ray ray, Mesh *mesh, float *t, Vec3 *normal)

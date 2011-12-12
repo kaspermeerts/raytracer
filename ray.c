@@ -331,8 +331,8 @@ static bool ray_triangle_intersect(Ray ray, Vec3 u, Vec3 v, Vec3 w,
 	return true;
 }
 
-static bool ray_kd_leaf_intersect(Ray ray, Vec3 *vertex_list, KdNode *leaf,
-		struct TriangleHit *hit)
+static bool ray_kd_leaf_intersect(Ray ray, const Vec3 *vertex_list,
+		const KdNode *leaf,	struct TriangleHit *hit)
 {
 
 	struct TriangleHit final_hit;
@@ -363,8 +363,8 @@ static bool ray_kd_leaf_intersect(Ray ray, Vec3 *vertex_list, KdNode *leaf,
 		return false;
 }
 
-static bool ray_kd_tree_intersect(Ray ray, Vec3 *vertex_list, KdNode *node,
-		struct TriangleHit *hit)
+static bool ray_kd_tree_intersect(Ray ray, const Vec3 *vertex_list,
+		const KdNode *node, struct TriangleHit *hit)
 {
 	const Vec3 plane_normal[3] =
 			{(Vec3) {1, 0, 0}, (Vec3) {0, 1, 0}, (Vec3) {0, 0, 1}};
@@ -435,7 +435,7 @@ static bool ray_kd_tree_intersect(Ray ray, Vec3 *vertex_list, KdNode *node,
 	return did_far;
 }
 
-static int ray_mesh_intersect(Ray ray, Mesh *mesh, float *t, Vec3 *normal)
+static int ray_mesh_intersect(Ray ray, const Mesh *mesh, float *t, Vec3 *normal)
 {
 	struct TriangleHit tri_hit;
 
@@ -454,7 +454,7 @@ static int ray_mesh_intersect(Ray ray, Mesh *mesh, float *t, Vec3 *normal)
 
 }
 
-static bool ray_surface_intersect(Ray ray, Surface *surf, Hit *hit)
+static bool ray_surface_intersect(Ray ray, const Surface *surf, Hit *hit)
 {
 	float ts[2] = {-HUGE_VAL, -HUGE_VAL}, t;
 	Vec3 tnormals[2] = {{0,0,0},{0,0,0}}, tnormal;

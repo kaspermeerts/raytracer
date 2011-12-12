@@ -58,7 +58,7 @@ void matstack_push(MatrixStack *stack)
 	}
 }
 
-Vec4 mat4_transform(Mat4 m, Vec4 v)
+Vec4 mat4_transform(const Mat4 m, Vec4 v)
 {
 	const double v0 = v.x, v1 = v.y, v2 = v.z, v3 = v.w;
 	Vec4 out;
@@ -73,14 +73,14 @@ Vec4 mat4_transform(Mat4 m, Vec4 v)
 	return out;
 }
 
-Vec3 mat4_transform3_homo(Mat4 m, Vec3 v)
+Vec3 mat4_transform3_homo(const Mat4 m, Vec3 v)
 {
 	Vec4 v4 = vec4_from_vec3(v, 1.0);
 	v4 = mat4_transform(m, v4);
 	return vec4_homogeneous_divide(v4);
 }
 
-Vec3 mat4_transform3_hetero(Mat4 m, Vec3 v)
+Vec3 mat4_transform3_hetero(const Mat4 m, Vec3 v)
 {
 	const double v0 = v.x, v1 = v.y, v2 = v.z;
 	Vec3 out;
@@ -95,7 +95,7 @@ Vec3 mat4_transform3_hetero(Mat4 m, Vec3 v)
 	return out;
 }
 
-void mat4_print(Mat4 m)
+void mat4_print(const Mat4 m)
 {
 	printf("%g\t%g\t%g\t%g\n", m[ 0], m[ 4], m[ 8], m[12]);
 	printf("%g\t%g\t%g\t%g\n", m[ 1], m[ 5], m[ 9], m[13]);
@@ -103,7 +103,7 @@ void mat4_print(Mat4 m)
 	printf("%g\t%g\t%g\t%g\n", m[ 3], m[ 7], m[11], m[15]);
 }
 
-void mat4_copy(Mat4 dst, Mat4 src)
+void mat4_copy(Mat4 dst, const Mat4 src)
 {
 	memcpy(dst, src, sizeof(Mat4));
 }
@@ -118,7 +118,7 @@ void mat4_transpose(Mat4 m)
 #undef SWAP
 #undef M
 }
-void mat4_mult(Mat4 c, Mat4 a, Mat4 b)
+void mat4_mult(Mat4 c, const Mat4 a, const Mat4 b)
 {
 	int i, j;
 
@@ -137,7 +137,7 @@ void mat4_mult(Mat4 c, Mat4 a, Mat4 b)
 }
 
 /* b * a --> a */
-void mat4_lmul(Mat4 b, Mat4 a)
+void mat4_lmul(const Mat4 b, Mat4 a)
 {
 	int i, j;
 #define A(i,j) a[4*j + i]
@@ -153,7 +153,7 @@ void mat4_lmul(Mat4 b, Mat4 a)
 }
 
 /* a * b --> a */
-void mat4_rmul(Mat4 a, Mat4 b)
+void mat4_rmul(Mat4 a, const Mat4 b)
 {
 	int i, j;
 
@@ -169,7 +169,7 @@ void mat4_rmul(Mat4 a, Mat4 b)
 #undef A
 }
 
-Vec3 mat3_transform(Mat3 a, Vec3 v)
+Vec3 mat3_transform(const Mat3 a, Vec3 v)
 {
 	Vec3 w;
 

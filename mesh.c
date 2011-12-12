@@ -248,7 +248,7 @@ static KdNode *kd_node_new(void)
 	return node;
 }
 
-static void split_kd_tree(Vec3 *vertex_list, KdNode *tree, enum AXIS axis,
+static void split_kd_tree(const Vec3 *vertex_list, KdNode *tree, enum AXIS axis,
 		float location)
 {
 	int lefti, righti;
@@ -315,8 +315,8 @@ static void split_kd_tree(Vec3 *vertex_list, KdNode *tree, enum AXIS axis,
 	tree->leaf = false;
 }
 
-static float calculate_cost(Vec3 *vertex_list, KdNode *tree, enum AXIS axis,
-		float location, BBox tree_box)
+static float calculate_cost(const Vec3 *vertex_list, const KdNode *tree,
+		enum AXIS axis,	float location, BBox tree_box)
 {
 	int left_tris, right_tris;
 	BBox left_box, right_box;
@@ -349,7 +349,7 @@ static float calculate_cost(Vec3 *vertex_list, KdNode *tree, enum AXIS axis,
 
 }
 
-static void build_kd_subtree(Vec3 *vertex_list, KdNode *tree, int depth,
+static void build_kd_subtree(const Vec3 *vertex_list, KdNode *tree, int depth,
 		enum AXIS axis, BBox bbox)
 {
 	enum AXIS next_axis;

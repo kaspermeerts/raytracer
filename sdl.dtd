@@ -135,6 +135,7 @@
 	camera						IDREF			#REQUIRED
 	lights						CDATA			#REQUIRED
 	background					CDATA			"0 0 0"
+	cubemap						CDATA			""
 >
 
 <!ELEMENT Shape EMPTY>

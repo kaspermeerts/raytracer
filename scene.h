@@ -3,9 +3,9 @@
 
 #include "cgmath.h"
 #include "colour.h"
+#include "texture.h"
 #include "mesh.h"
 #include "lighting.h"
-#include "bbox.h"
 
 enum { MAX_LIGHTS=8 };
 
@@ -66,6 +66,7 @@ typedef struct Scene {
 	int num_lights;
 	Light *light[MAX_LIGHTS];
 	Colour background;
+	CubeMap *environment_map;
 	Surface *root;
 } Scene;
 

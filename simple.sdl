@@ -12,9 +12,9 @@
 	/>
 
    <Cameras>
-      <Camera position="1 1 1" direction="-1 -1 -1" up="0 1 0" fovy="45"
+      <Camera position="4 5 4" direction="-4 -4 -4" up="0 1 0" fovy="45"
 	  		name="cam0" />
-      <Camera position="0 0.1 0.4" direction="0 -1 -4" up="0 1 0" fovy="45"
+      <Camera position="-4 4 0" direction="1 -1 0" up="0 1 0" fovy="17"
 	  		name="cam1" />
    </Cameras>
 
@@ -31,18 +31,17 @@
 	   <Mesh src="cube.obj" name="cube" />
 	   <Mesh src="torus.obj" name="torus" />
 	   <Mesh src="cylinder.obj" name="cylinder" />
-	   <Mesh src="Infinite-Level_02.OBJ" name="derpy"/>
    </Geometry>
 
    <Materials>
 	  <Material diffuse_color="0.75 0.75 1" specular_color="1 1 1"
-	  		specular_exponent="50" reflect="-0.3" name="mat0" />
+	  		specular_exponent="50" reflect="0.3" name="mat0" />
 	  <Material diffuse_color="1.0 0.33 0.33" specular_color="1 1 1"
-	  		specular_exponent="50" reflect="-1" name="red" />
+	  		specular_exponent="50" reflect="0.3" name="red" />
 
    </Materials>
 
-	<Scene camera="cam1" lights="light0" background="0.3 0.3 0.3">
+	<Scene camera="cam0" lights="light0" background="0.3 0.3 0.3" >
 		<Rotate axis="0 1 0" angle="0" >
 				<Shape geometry="teapot" material="mat0" />
 		</Rotate>

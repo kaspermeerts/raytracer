@@ -38,7 +38,7 @@ static Colour hit_light_colour(Hit *hit, Light *light, Vec3 cam_dir)
 
 		shadow_ray.direction = light_dir;
 		shadow_ray.origin = vec3_add(hit->position,
-				vec3_scale(1e-1, shadow_ray.direction));
+				vec3_scale(1e-2, shadow_ray.direction));
 		shadow_ray.near = 0;
 		shadow_ray.far = vec3_length(vec3_sub(light_pos, hit->position));
 		if (ray_intersect(shadow_ray, &dummy))
@@ -63,7 +63,12 @@ Colour ray_colour(Ray ray, int ttl)
 		return BLACK;
 
 	if (!ray_intersect(ray, &hit))
-		return scene->background;
+	{
+		if (scene->environment_map)
+			return cubemap_colour(scene->environment_map, ray.direction);
+		else
+			return scene->background;
+	}
 
 
 	cam_dir = vec3_normalize(vec3_scale(-1, ray.direction));
@@ -73,21 +78,19 @@ Colour ray_colour(Ray ray, int ttl)
 	for (int i = 0; i < scene->num_lights; i++)
 		total = colour_add(total, hit_light_colour(&hit, scene->light[i], cam_dir));
 
-	/*
 	if (hit.surface->material->reflect > 0.0)
 	{
 		Ray rray;
 		Colour reflect_colour;
 
 		rray.direction = vec3_reflect(ray.direction, hit.normal);
-		rray.origin = vec3_add(hit.position, vec3_scale(1e-4, rray.direction));
+		rray.origin = vec3_add(hit.position, vec3_scale(1e-2, rray.direction));
 		rray.near = 0;
 		rray.far = HUGE_VAL;
 
 		reflect_colour = ray_colour(rray, ttl - 1);
 		total = colour_add(total, colour_scale(hit.surface->material->reflect, colour_mul(hit.surface->material->specular_colour, reflect_colour)));
 	}
-	*/
 
 	return total;
 }

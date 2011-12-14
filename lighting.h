@@ -18,13 +18,6 @@ typedef struct Light {
 	char *name;
 } Light;
 
-typedef struct Texture {
-	char *source;
-	int width, height;
-	Colour *image;
-	char *name;
-} Texture;
-
 typedef struct Material {
 	Colour diffuse_colour;
 	Colour specular_colour;

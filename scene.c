@@ -8,9 +8,8 @@
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 
-#include "scene.h"
-#include "mesh.h"
 #include "timer.h"
+#include "scene.h"
 
 static Config internal_config;
 
@@ -233,10 +232,13 @@ static bool import_shapes(Sdl *sdl, xmlNode *node, int n)
 
 static bool import_textures(Sdl *sdl, xmlNode *node, int n)
 {
+	/*
 	int i;
 	xmlNode *cur_node;
-
+	*/
+	node = node;
 	sdl->num_textures = n;
+	/*
 	sdl->texture = calloc(n, sizeof(Texture));
 
 	for (i = 0, cur_node = xmlFirstElementChild(node); cur_node;
@@ -247,10 +249,9 @@ static bool import_textures(Sdl *sdl, xmlNode *node, int n)
 		tex->source = strdup(xmlGetProp(cur_node, "src"));
 		tex->name = strdup(xmlGetProp(cur_node, "name"));
 		assert("Texture should be loaded here" == NULL);
-		/* TODO: Load texture here? */
 	}
 	assert(i == n);
-
+	*/
 	return true;
 }
 
@@ -432,9 +433,9 @@ static BBox build_bbox_plane(Plane plane, Mat4 model_matrix)
 	tl = mat4_transform3_homo(model_matrix, tl);
 	tr = mat4_transform3_homo(model_matrix, tr);
 
-	bbox.xmin = MIN(bl.x, MIN(br.x, MIN(tl.x, tr.x)));
-	bbox.ymin = MIN(bl.y, MIN(br.y, MIN(tl.y, tr.y)));
-	bbox.zmin = MIN(bl.z, MIN(br.z, MIN(tl.z, tr.z)));
+	bbox.xmin = MIN(bl.x, MIN(br.x, MIN(tl.x, tr.x))) - 1e-3;
+	bbox.ymin = MIN(bl.y, MIN(br.y, MIN(tl.y, tr.y))) - 1e-3;
+	bbox.zmin = MIN(bl.z, MIN(br.z, MIN(tl.z, tr.z))) - 1e-3;
 
 	bbox.xmax = MAX(bl.x, MAX(br.x, MAX(tl.x, tr.x))) + 1e-3;
 	bbox.ymax = MAX(bl.y, MAX(br.y, MAX(tl.y, tr.y))) + 1e-3;
@@ -517,7 +518,7 @@ static void build_bbox(Surface *surface)
 static bool import_scene(Sdl *sdl, xmlNode *node, int n)
 {
 	Scene *rw_scene = &sdl->internal_scene;
-	const char *cam_name, *light_names;
+	const char *cam_name, *light_names, *cubemap_file;
 	MatrixStack *model_matrix;
 
 	n = n; /* UNUSED */
@@ -552,6 +553,14 @@ static bool import_scene(Sdl *sdl, xmlNode *node, int n)
 
 	/* Background */
 	rw_scene->background = parse_colour(xmlGetProp(node, "background"));
+	cubemap_file = xmlGetProp(node, "cubemap");
+	if (cubemap_file[0] != '\0')
+	{
+		rw_scene->environment_map = cubemap_load(cubemap_file);
+		if (!rw_scene->environment_map)
+			return NULL;
+	} else
+		rw_scene->environment_map = NULL;
 
 	/* The actual scene */
 	model_matrix = matstack_new();

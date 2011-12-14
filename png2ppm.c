@@ -10,19 +10,27 @@
 int main(int argc, char **argv)
 {
 	FILE *out;
-	CubeMap *map;
+	Texture *texture;
+	Colour *buffer;
+	const int width = 500, height = 972;
 
 	if (argc < 2)
 		return 1;
 
-	map = cubemap_load("cubemap/deadmeat_skymorning");
+	texture = texture_load_png("rainbowdash.png");
+	buffer = calloc(width * height, sizeof(Colour));
+	for (int y = 0; y < height; y++)
+	for (int x = 0; x < width; x++)
+	{
+		buffer[y*width + x] = texture_texel(texture, ((float)x)/width, ((float)y)/height);
+	}
 	out = fopen(argv[1], "wb");
 	if (out == NULL)
 	{
 		printf("Error opening %s\n", argv[1]);
-		free(map);
+		free(texture);
 		return 1;
 	}
-	ppm_write(map->buffer[0], map->width, map->height, out);
+	ppm_write(buffer, width, height, out);
 	return 0;
 }

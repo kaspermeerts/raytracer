@@ -80,6 +80,7 @@ Vec3 vec3_reflect(Vec3 d, Vec3 n)
 	return vec3_add(d, vec3_scale(-2*vec3_dot(d,n),n));
 }
 
+
 Vec4 vec4_from_vec3(Vec3 v3, double w)
 {
 	Vec4 v4;

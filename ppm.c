@@ -7,16 +7,15 @@
 
 bool ppm_write(Colour *buffer, int width, int height, FILE *fd)
 {
-	int i, j;
 	size_t nread;
 
 	fprintf(fd, "P6\n");
 	fprintf(fd, "%d %d\n", width, height);
 	fprintf(fd, "%d\n", 255);
 
-	for (j = 0; j < height; j++)
+	for (int j = 0; j < height; j++)
 	{
-	for (i = 0; i < width; i++)
+	for (int i = 0; i < width; i++)
 	{
 		Colour c = buffer[width*(height - 1 - j) + i];
 		unsigned char out[3];

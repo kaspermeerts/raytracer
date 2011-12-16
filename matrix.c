@@ -120,15 +120,13 @@ void mat4_transpose(Mat4 m)
 }
 void mat4_mult(Mat4 c, const Mat4 a, const Mat4 b)
 {
-	int i, j;
-
 #define A(i,j) a[4*j + i]
 #define B(i,j) b[4*j + i]
 #define C(i,j) c[4*j + i]
-	for (i = 0; i < 4; i++)
+	for (int i = 0; i < 4; i++)
 	{
 		double A0 = A(i, 0), A1 = A(i, 1), A2 = A(i, 2), A3 = A(i, 3);
-		for (j = 0; j < 4; j++)
+		for (int j = 0; j < 4; j++)
 			C(i,j) = A0*B(0,j) + A1*B(1,j) + A2*B(2,j) + A3*B(3,j);
 	}
 #undef C
@@ -139,13 +137,12 @@ void mat4_mult(Mat4 c, const Mat4 a, const Mat4 b)
 /* b * a --> a */
 void mat4_lmul(const Mat4 b, Mat4 a)
 {
-	int i, j;
 #define A(i,j) a[4*j + i]
 #define B(i,j) b[4*j + i]
-	for (j = 0; j < 4; j++)
+	for (int j = 0; j < 4; j++)
 	{
 		double A0 = A(0, j), A1 = A(1, j), A2 = A(2, j), A3 = A(3, j);
-		for (i = 0; i < 4; i++)
+		for (int i = 0; i < 4; i++)
 			A(i,j) = B(i,0)*A0 + B(i,1)*A1 + B(i,2)*A2 + B(i,3)*A3;
 	}
 #undef B
@@ -155,14 +152,12 @@ void mat4_lmul(const Mat4 b, Mat4 a)
 /* a * b --> a */
 void mat4_rmul(Mat4 a, const Mat4 b)
 {
-	int i, j;
-
 #define A(i,j) a[4*j + i]
 #define B(i,j) b[4*j + i]
-	for (i = 0; i < 4; i++)
+	for (int i = 0; i < 4; i++)
 	{
 		double A0 = A(i, 0), A1 = A(i, 1), A2 = A(i, 2), A3 = A(i, 3);
-		for (j = 0; j < 4; j++)
+		for (int j = 0; j < 4; j++)
 			A(i,j) = A0*B(0,j) + A1*B(1,j) + A2*B(2,j) + A3*B(3,j);
 	}
 #undef B

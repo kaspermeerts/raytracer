@@ -7,12 +7,12 @@
 		height = "512"
 		antialiasing = "false"
 		aa_samples = "4"
-		shadow_samples = "1"
+		shadow_samples = "4"
 		max_reflections = "5"
 	/>
 
 	<Cameras>
-	<Camera position="0 0 -2" direction="0 0 1" up="0 1 0" fovy="160" 
+	<Camera position="0 0 5" direction="0 0 -8" up="0 1 0" fovy="175" 
 	name="cam0" />
 	</Cameras>
 
@@ -24,14 +24,7 @@
 	</Lights>
 
 	<Geometry>
-	<!--
-	<Cylinder radius="1" height="2" capped="false" name="cylinder" />
-	<Plane edge1="0 0 16" edge2="16 0 0" name="plane"/>
-	<Plane edge1="0 0  8" edge2=" 8 0 0" name="smallplane" />
-	<Mesh src="triceratops.obj" name="triceratops" />
-	<Mesh src="teapot.obj" name="teapot" />
-	-->
-	<Sphere radius="1" name="sphere" />
+		<Sphere radius="1" name="sph0" />
 	</Geometry>
 
 	<Materials>
@@ -45,35 +38,39 @@
 			specular_exponent="400" reflect="0.3" name="greenplastic" />
 	<Material diffuse_color="0.44 0.22 0.88" specular_color="1 1 1"
 			specular_exponent="400" name="blueplastic" />
-	<Material diffuse_color="0.44 0.22 0.88" refract="1.0"
-			refractive_index="1.0"  name="blueglass"/>
 	</Materials>
 
 	<Scene camera="cam0" lights="arealight,camlight" background="0.3 0.3 0.3"
-			cubemap="cubemap/deadmeat_skymorning">
+			cubemap="cubemap/uffizi_gallery">
 	<Translate vector="0 0 0">
 
-		<!--
-		<Translate vector="2.4 2 2.4">
-			<Rotate axis="1 0 0" angle="90">
-			<Shape geometry="cylinder" material="redplastic" />
-			</Rotate>
-		</Translate>
-		<Translate vector=" 0  0  0">
-			<Shape geometry="teapot" material="greenplastic" />
-		</Translate>
-		<Translate vector="-2  1  2">
-			<Shape geometry="sphere" material="blueplastic" />
-		</Translate>
-
-		<Translate vector="-4 0 -4">
-			<Shape geometry="smallplane" material="greyplastic" />
-		</Translate>
-		-->
-		<Translate vector="0 0 2">
-			<Shape geometry="sphere" material="greenplastic" />
-		</Translate>
-
+	<Translate vector="-2 -2 0">
+		<Shape geometry="sph0" material="greenplastic" />
+	</Translate>
+	<Translate vector=" 0 -2 0">
+		<Shape geometry="sph0" material="greenplastic" />
+	</Translate>
+	<Translate vector=" 2 -2 0">
+		<Shape geometry="sph0" material="greenplastic" />
+	</Translate>
+	<Translate vector="-2  0 0">
+		<Shape geometry="sph0" material="greenplastic" />
+	</Translate>
+	<Translate vector=" 0  0 0">
+		<Shape geometry="sph0" material="greenplastic" />
+	</Translate>
+	<Translate vector=" 2  0 0">
+		<Shape geometry="sph0" material="greenplastic" />
+	</Translate>
+	<Translate vector="-2  2 0">
+		<Shape geometry="sph0" material="greenplastic" />
+	</Translate>
+	<Translate vector=" 0  2 0">
+		<Shape geometry="sph0" material="greenplastic" />
+	</Translate>
+	<Translate vector=" 2  2 0">
+		<Shape geometry="sph0" material="greenplastic" />
+	</Translate>
 	</Translate>
 	</Scene>
 </Sdl>

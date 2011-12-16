@@ -258,17 +258,16 @@ static void split_kd_tree(const Vec3 *vertex_list, KdNode *tree, enum AXIS axis,
 	tree->right = kd_node_new();
 	for (int i = 0; i < tree->num_triangles; i++)
 	{
-		Vec3 v[3];
 		bool v_left[3]; /* v_left[i]: is vertex i left or right */
 		for (int j = 0; j < 3; j++)
 		{
-			v[j] = vertex_list[tree->triangle[i].vertex_index[j]];
+			Vec3 v = vertex_list[tree->triangle[i].vertex_index[j]];
 			if (axis == X_AXIS)
-				v_left[j] = v[j].x <= tree->location;
+				v_left[j] = v.x <= tree->location;
 			else if (axis == Y_AXIS)
-				v_left[j] = v[j].y <= tree->location;
+				v_left[j] = v.y <= tree->location;
 			else /* axis == Z_AXIS */
-				v_left[j] = v[j].z <= tree->location;
+				v_left[j] = v.z <= tree->location;
 		}
 
 		if (v_left[0] || v_left[1] || v_left[2])
@@ -283,17 +282,16 @@ static void split_kd_tree(const Vec3 *vertex_list, KdNode *tree, enum AXIS axis,
 	lefti = righti = 0;
 	for (int i = 0; i < tree->num_triangles; i++)
 	{
-		Vec3 v[3];
 		bool v_left[3]; /* v_left[i]: is vertex i left or right */
 		for (int j = 0; j < 3; j++)
 		{
-			v[j] = vertex_list[tree->triangle[i].vertex_index[j]];
+			Vec3 v = vertex_list[tree->triangle[i].vertex_index[j]];
 			if (axis == X_AXIS)
-				v_left[j] = v[j].x <= tree->location;
+				v_left[j] = v.x <= tree->location;
 			else if (axis == Y_AXIS)
-				v_left[j] = v[j].y <= tree->location;
+				v_left[j] = v.y <= tree->location;
 			else /* axis == Z_AXIS */
-				v_left[j] = v[j].z <= tree->location;
+				v_left[j] = v.z <= tree->location;
 		}
 
 		if (v_left[0] || v_left[1] || v_left[2])
@@ -324,17 +322,16 @@ static float calculate_cost(const Vec3 *vertex_list, const KdNode *tree,
 	for (int i = 0; i < tree->num_triangles; i++)
 	{
 		Triangle tri = tree->triangle[i];
-		Vec3 v[3];
 		bool v_left[3]; /* v_left[i]: is vertex i left or right */
 		for (int j = 0; j < 3; j++)
 		{
-			v[j] = vertex_list[tri.vertex_index[j]];
+			Vec3 v = vertex_list[tri.vertex_index[j]];
 			if (axis == X_AXIS)
-				v_left[j] = v[j].x <= location;
+				v_left[j] = v.x <= location;
 			else if (axis == Y_AXIS)
-				v_left[j] = v[j].y <= location;
+				v_left[j] = v.y <= location;
 			else /* axis == Z_AXIS */
-				v_left[j] = v[j].z <= location;
+				v_left[j] = v.z <= location;
 		}
 
 		if (v_left[0] || v_left[1] || v_left[2])
@@ -426,22 +423,21 @@ void mesh_build_kd_tree(Mesh *mesh)
 	for (int i = 0; i < mesh->num_triangles; i++)
 	{
 		Triangle tri = mesh->triangle[i];
-		Vec3 v[3];
 		for (int j = 0; j < 3; j++)
 		{
-			v[j] = mesh->vertex[tri.vertex_index[j]];
-			if (v[j].x < bbox.xmin)
-				bbox.xmin = v[j].x;
-			if (v[j].x > bbox.xmax)
-				bbox.xmax = v[j].x;
-			if (v[j].y < bbox.ymin)
-				bbox.ymin = v[j].y;
-			if (v[j].y > bbox.ymax)
-				bbox.ymax = v[j].y;
-			if (v[j].z < bbox.zmin)
-				bbox.zmin = v[j].z;
-			if (v[j].z > bbox.zmax)
-				bbox.zmax = v[j].z;
+			Vec3 v = mesh->vertex[tri.vertex_index[j]];
+			if (v.x < bbox.xmin)
+				bbox.xmin = v.x;
+			if (v.x > bbox.xmax)
+				bbox.xmax = v.x;
+			if (v.y < bbox.ymin)
+				bbox.ymin = v.y;
+			if (v.y > bbox.ymax)
+				bbox.ymax = v.y;
+			if (v.z < bbox.zmin)
+				bbox.zmin = v.z;
+			if (v.z > bbox.zmax)
+				bbox.zmax = v.z;
 		}
 	}
 	mesh->kd_tree = kd_node_new();

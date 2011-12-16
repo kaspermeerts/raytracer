@@ -84,23 +84,6 @@
 	name						ID				#REQUIRED
 >
 
-<!ELEMENT Teapot EMPTY>
-<!ATTLIST Teapot
-	size						CDATA			#REQUIRED
-	name						ID				#REQUIRED
->
-
-<!ELEMENT IndexedTriangleSet EMPTY>
-<!ATTLIST IndexedTriangleSet
-	coordinates					CDATA			#REQUIRED
-	normals						CDATA			#IMPLIED
-	textureCoordinates			CDATA			#IMPLIED	
-	coordinateIndices			CDATA			#REQUIRED
-	normalIndices				CDATA			#IMPLIED
-	textureCoordinateIndices	CDATA			#IMPLIED
-	name						ID				#REQUIRED
->
-
 <!ELEMENT Mesh EMPTY>
 <!ATTLIST Mesh
 	src							CDATA			#REQUIRED
@@ -123,9 +106,11 @@
 <!ELEMENT Material EMPTY>
 <!ATTLIST Material
 	diffuse_color				CDATA			#REQUIRED
-	specular_color				CDATA			"0 0 0"
-	specular_exponent			CDATA			"1"
+	specular_color				CDATA			"1 1 1"
+	specular_exponent			CDATA			"100"
 	reflect						CDATA			"0"
+	refract						CDATA			"0"
+	refractive_index			CDATA			"1"
 	name						ID				#REQUIRED
 >
 

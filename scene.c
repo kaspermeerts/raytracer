@@ -98,7 +98,7 @@ static bool import_cameras(Sdl *sdl, xmlNode *node, int n)
 	sdl->num_cameras = n;
 	sdl->camera = calloc(n, sizeof(Camera));
 
-	for (i = 0, cur_node = xmlFirstElementChild(node); cur_node; 
+	for (i = 0, cur_node = xmlFirstElementChild(node); cur_node;
 			i++, cur_node = xmlNextElementSibling(cur_node))
 	{
 		Camera *cam = &sdl->camera[i];
@@ -274,6 +274,9 @@ static bool import_materials(Sdl *sdl, xmlNode *node, int n)
 		mat->shininess =
 				parse_double(xmlGetProp(cur_node, "specular_exponent"));
 		mat->reflect = parse_double(xmlGetProp(cur_node, "reflect"));
+		mat->refract = parse_double(xmlGetProp(cur_node, "refract"));
+		mat->refractive_index = parse_double(xmlGetProp(cur_node,
+				"refractive_index"));
 
 		mat->name = strdup(xmlGetProp(cur_node, "name"));
 	}

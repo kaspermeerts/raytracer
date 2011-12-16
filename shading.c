@@ -70,9 +70,7 @@ Colour ray_colour(Ray ray, int ttl)
 			return scene->background;
 	}
 
-
 	cam_dir = vec3_normalize(vec3_scale(-1, ray.direction));
-
 
 	total = BLACK;
 	for (int i = 0; i < scene->num_lights; i++)

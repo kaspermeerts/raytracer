@@ -629,6 +629,7 @@ static void png_filter_sub(int stride, unsigned char* in, unsigned char* out, in
 {
 	int i;
 	unsigned char a = 0;
+	stride = stride;
 
 	for(i = 0; i < len; i++)
 	{
@@ -642,6 +643,7 @@ static void png_filter_sub(int stride, unsigned char* in, unsigned char* out, in
 static void png_filter_up(int stride, unsigned char* in, unsigned char* out, unsigned char* prev_line, int len)
 {
 	int i;
+	stride = stride;
 
 	if(prev_line) 
     { 
@@ -729,7 +731,8 @@ static void png_filter_paeth(int stride, unsigned char* in, unsigned char* out, 
 
 static int png_filter(png_t* png, unsigned char* data)
 {
-
+	png = png;
+	data = data;
 
 	return PNG_NO_ERROR;
 }
@@ -828,7 +831,7 @@ int png_set_data(png_t* png, unsigned width, unsigned height, char depth, int co
 
 	filtered = png_alloc(width * height * png->bpp + height);
 
-	for(i = 0; i < png->height; i++)
+	for(i = 0; i < (signed) png->height; i++)
 	{
 		filtered[i*png->width*png->bpp+i] = 0;
 		memcpy(&filtered[i*png->width*png->bpp+i+1], data + i * png->width*png->bpp, png->width*png->bpp);

@@ -24,7 +24,7 @@ static Ray cam_ray_internal(Camera *cam, int i, int j, float offx, float offy,
 	double bottom, left, width, height;
 	const int nx = config->width, ny = config->height;
 
-	width = near*tan(cam->fov*M_TWO_PI/360.);
+	width = 2*near*tan(cam->fov*M_TWO_PI/360./2.);
 	left = -width/2;
 	height = width * ny/(double) nx;
 	bottom = -height/2;

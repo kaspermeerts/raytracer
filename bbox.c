@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <math.h>
 
 #include "bbox.h"
 
@@ -29,6 +30,6 @@ void bbox_split(BBox a, enum AXIS axis, float location, BBox *b, BBox *c)
 
 double bbox_surface_area(BBox a)
 {
-	return 2 * (a.zmax - a.zmin) * (a.ymax - a.ymin) * (a.xmax - a.xmin);
+	return 2 * fabs(a.zmax - a.zmin) * fabs(a.ymax - a.ymin) * fabs(a.xmax - a.xmin);
 }
 

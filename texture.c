@@ -76,6 +76,10 @@ Colour texture_texel(Texture *texture, double u, double v)
 	double ualpha, ubeta, valpha, vbeta;
 	Colour caa, cab, cba, cbb;
 
+	if (u == 1.0)
+		u -= 1e-6;
+	if (v == 1.0)
+		v -= 1e-6;
 	u = u - floor(u);
 	v = v - floor(v);
 	u *= texture->width;
@@ -131,9 +135,9 @@ CubeMap *cubemap_load(const char *prefix)
 Colour cubemap_colour(CubeMap *map, Vec3 d)
 {
 	Texture *texture = NULL;
-	float u, v;
+	float u = 0.0, v = 0.0;
 	double dx = fabs(d.x), dy = fabs(d.y), dz = fabs(d.z);
-	if (dx > dy && dx > dz)
+	if (dx >= dy && dx >= dz)
 	{
 		if (d.x >= 0)
 		{
@@ -146,7 +150,7 @@ Colour cubemap_colour(CubeMap *map, Vec3 d)
 			v = (1.0 - d.y/d.x)/2.0;
 			texture = map->texture[NEGATIVE_X];
 		}
-	} else if (dy > dz && dy > dx)
+	} else if (dy >= dz && dy >= dx)
 	{
 		if (d.y >= 0)
 		{
@@ -159,7 +163,7 @@ Colour cubemap_colour(CubeMap *map, Vec3 d)
 			v = (1.0 + d.z/d.y)/2.0;
 			texture = map->texture[NEGATIVE_Y];
 		}
-	} else if (dz > dx && dz > dy)
+	} else if (dz >= dx && dz >= dy)
 	{
 		if (d.z >= 0)
 		{
@@ -174,8 +178,5 @@ Colour cubemap_colour(CubeMap *map, Vec3 d)
 		}
 	}
 
-	if (texture)
-		return texture_texel(texture, u, v);
-	else
-		return BLACK;
+	return texture_texel(texture, u, v);
 }

@@ -840,7 +840,7 @@ int png_set_data(png_t* png, unsigned width, unsigned height, char depth, int co
 	png_filter(png, filtered);
 	png_write_ihdr(png);
 	png_write_idats(png, filtered);
-	
+
 	png_free(filtered);
 	return PNG_NO_ERROR;
 }

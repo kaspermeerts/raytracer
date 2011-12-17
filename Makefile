@@ -11,14 +11,10 @@ INCFLAGS = -I. `xml2-config --cflags`
 LDFLAGS = -Lpnglite -lpnglite -lm -Lobjreader -lobjreader `xml2-config --libs`
 
 #all: treetest rayviewer raytracer rasteriser
-all: pnglite/libpnglite.a png2ppm raytracer
+all: raytracer
 
 pnglite/libpnglite.a:
 	$(MAKE) -C pnglite libpnglite.a
-
-png2ppm: png2ppm.c ppm.c colour.c texture.c
-	@echo "	CC png2ppm"
-	@$(CC) -o png2ppm png2ppm.c ppm.c colour.c texture.c $(CFLAGS) $(INCFLAGS) $(LDFLAGS)
 
 rayviewer: rayviewer.c $(RAY_SRC)
 	@echo "	CC rayviewer"

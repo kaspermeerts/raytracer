@@ -58,7 +58,7 @@ static Colour parse_colour(const char *string)
 static bool parse_bool(const char *string)
 {
 	assert(string != NULL);
-	return (strcmp(string, "true") == 0) || (strcmp(string, "1") == 0);
+	return (strcmp(string, "true") == 0);
 }
 
 static char *strdup(const char *string)
@@ -179,7 +179,11 @@ static bool import_shapes(Sdl *sdl, xmlNode *node, int n)
 			shape->type = SHAPE_PLANE;
 			shape->u.plane.edge1 = parse_vec3(xmlGetProp(cur_node, "edge1"));
 			shape->u.plane.edge2 = parse_vec3(xmlGetProp(cur_node, "edge2"));
-		} else if (strcmp(cur_node->name, "Sphere") == 0)
+		} else if (strcmp(cur_node->name, "Disk") == 0)
+		{
+			shape->type = SHAPE_DISK;
+			shape->u.disk.radius = parse_double(xmlGetProp(cur_node, "radius"));
+		}else if (strcmp(cur_node->name, "Sphere") == 0)
 		{
 			shape->type = SHAPE_SPHERE;
 			shape->u.sphere.radius =
@@ -199,13 +203,6 @@ static bool import_shapes(Sdl *sdl, xmlNode *node, int n)
 			shape->u.cone.radius = parse_double(xmlGetProp(cur_node, "radius"));
 			shape->u.cone.height = parse_double(xmlGetProp(cur_node, "height"));
 			shape->u.cone.capped = parse_bool(xmlGetProp(cur_node, "capped"));
-		} else if (strcmp(cur_node->name, "Torus") == 0)
-		{
-			shape->type = SHAPE_TORUS;
-			shape->u.torus.inner_radius =
-					parse_double(xmlGetProp(cur_node, "innerRadius"));
-			shape->u.torus.outer_radius =
-					parse_double(xmlGetProp(cur_node, "outerRadius"));
 		} else if (strcmp(cur_node->name, "Mesh") == 0)
 		{
 			const char *filename;
@@ -274,10 +271,7 @@ static bool import_materials(Sdl *sdl, xmlNode *node, int n)
 		mat->shininess =
 				parse_double(xmlGetProp(cur_node, "specular_exponent"));
 		mat->reflect = parse_double(xmlGetProp(cur_node, "reflect"));
-		mat->refract = parse_double(xmlGetProp(cur_node, "refract"));
-		mat->refractive_index = parse_double(xmlGetProp(cur_node,
-				"refractive_index"));
-
+		mat->glossiness = parse_double(xmlGetProp(cur_node, "glossiness"));
 		mat->name = strdup(xmlGetProp(cur_node, "name"));
 	}
 
@@ -424,29 +418,6 @@ static bool import_graph(Sdl *sdl, Surface **root, xmlNode *xml_node,
 	return true;
 }
 
-static BBox build_bbox_plane(Plane plane, Mat4 model_matrix)
-{
-	BBox bbox;
-	/* Bottom-left, top-right, etc... */
-	Vec3 bl = (Vec3) {0, 0, 0}, br = plane.edge1, tl = plane.edge2,
-			tr = vec3_add(plane.edge1, plane.edge2);
-
-	bl = mat4_transform3_homo(model_matrix, bl);
-	br = mat4_transform3_homo(model_matrix, br);
-	tl = mat4_transform3_homo(model_matrix, tl);
-	tr = mat4_transform3_homo(model_matrix, tr);
-
-	bbox.xmin = MIN(bl.x, MIN(br.x, MIN(tl.x, tr.x))) - 1e-3;
-	bbox.ymin = MIN(bl.y, MIN(br.y, MIN(tl.y, tr.y))) - 1e-3;
-	bbox.zmin = MIN(bl.z, MIN(br.z, MIN(tl.z, tr.z))) - 1e-3;
-
-	bbox.xmax = MAX(bl.x, MAX(br.x, MAX(tl.x, tr.x))) + 1e-3;
-	bbox.ymax = MAX(bl.y, MAX(br.y, MAX(tl.y, tr.y))) + 1e-3;
-	bbox.zmax = MAX(bl.z, MAX(br.z, MAX(tl.z, tr.z))) + 1e-3;
-
-	return bbox;
-}
-
 static BBox build_bbox_mesh(Mesh *mesh, Mat4 model_matrix)
 {
 	BBox bbox;
@@ -483,39 +454,72 @@ static BBox build_bbox_mesh(Mesh *mesh, Mat4 model_matrix)
 
 static void build_bbox(Surface *surface)
 {
-	Vec4 center4 = {0, 0, 0, 1.0};
-	Vec3 center;
-
-	center4 = mat4_transform(surface->model_to_world, center4);
-	center = vec4_homogeneous_divide(center4);
+	Vec3 bl, br, tl, tr;
+	BBox box = surface->bbox;
 
 	switch(surface->shape->type)
 	{
 	case SHAPE_PLANE:
-		surface->bbox = build_bbox_plane(surface->shape->u.plane,
-				surface->model_to_world);
+		bl = (Vec3) {0, 0, 0};
+		br = surface->shape->u.plane.edge1;
+		tl = surface->shape->u.plane.edge2;
+		tr = vec3_add(br, tl);
+
+		box.xmin = MIN(bl.x, MIN(br.x, MIN(tl.x, tr.x)));
+		box.ymin = MIN(bl.y, MIN(br.y, MIN(tl.y, tr.y)));
+		box.zmin = MIN(bl.z, MIN(br.z, MIN(tl.z, tr.z)));
+
+		box.xmax = MAX(bl.x, MAX(br.x, MAX(tl.x, tr.x)));
+		box.ymax = MAX(bl.y, MAX(br.y, MAX(tl.y, tr.y)));
+		box.zmax = MAX(bl.z, MAX(br.z, MAX(tl.z, tr.z)));
+		break;
+	case SHAPE_DISK:
+		box.xmin = box.ymin = -surface->shape->u.disk.radius;
+		box.xmax = box.ymax = +surface->shape->u.disk.radius;
+		box.zmin = -1e-3;
+		box.zmax = +1e-3;
 		break;
 	case SHAPE_SPHERE:
-		surface->bbox.xmin = center.x - surface->shape->u.sphere.radius;
-		surface->bbox.ymin = center.y - surface->shape->u.sphere.radius;
-		surface->bbox.zmin = center.z - surface->shape->u.sphere.radius;
-		surface->bbox.xmax = center.x + surface->shape->u.sphere.radius;
-		surface->bbox.ymax = center.y + surface->shape->u.sphere.radius;
-		surface->bbox.zmax = center.z + surface->shape->u.sphere.radius;
+		box.xmin = -surface->shape->u.sphere.radius;
+		box.ymin = -surface->shape->u.sphere.radius;
+		box.zmin = -surface->shape->u.sphere.radius;
+		box.xmax = +surface->shape->u.sphere.radius;
+		box.ymax = +surface->shape->u.sphere.radius;
+		box.zmax = +surface->shape->u.sphere.radius;
+		break;
+	case SHAPE_CONE:
+		box.xmin = box.ymin = -surface->shape->u.cone.radius;
+		box.xmax = box.ymax = +surface->shape->u.cone.radius;
+		box.zmin = 0;
+		box.zmax = surface->shape->u.cone.height;
 		break;
 	case SHAPE_CYLINDER:
-		surface->bbox.xmin = surface->bbox.ymin = surface->bbox.zmin = -HUGE_VAL;
-		surface->bbox.xmax = surface->bbox.ymax = surface->bbox.zmax =  HUGE_VAL;
+		box.xmin = box.ymin = -surface->shape->u.cylinder.radius;
+		box.xmax = box.ymax = +surface->shape->u.cylinder.radius;
+		box.zmin = 0;
+		box.zmax = surface->shape->u.cylinder.height;
 		break;
 	case SHAPE_MESH:
+		/* Build a tight box */
 		surface->bbox = build_bbox_mesh(surface->shape->u.mesh,
 				surface->model_to_world);
+		return;
 		break;
 	default:
 		printf("Unimplemented\n");
 		exit(1);
 		break;
 	}
+
+	box.xmin -= 1e-3;
+	box.ymin -= 1e-3;
+	box.zmin -= 1e-3;
+
+	box.xmax += 1e-3;
+	box.ymax += 1e-3;
+	box.zmax += 1e-3;
+
+	surface->bbox = bbox_transform(surface->model_to_world, box);
 }
 
 static bool import_scene(Sdl *sdl, xmlNode *node, int n)

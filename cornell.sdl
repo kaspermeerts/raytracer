@@ -1,0 +1,70 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE Sdl SYSTEM "sdl.dtd">
+
+<Sdl>
+	<Config
+		width =  "300"
+		height = "300"
+		antialiasing = "false"
+		aa_samples = "4"
+		shadow_samples = "1"
+		max_reflections = "5"
+	/>
+
+	<Cameras>
+	<Camera position="0 0 -16" direction="0 0 1" up="0 1 0" fovy="90" 
+	name="cam0" />
+	</Cameras>
+
+	<Lights>
+	<PointLight position="0 8 0" intensity="0.9" color="1 1 1" name="light0" />
+	<PointLight position="5 1 5" intensity="0.0" color="1 1 0" name="light1" />
+	<AreaLight intensity="0.5" position="-1 7.5 -1" edge1="0 0 2" edge2="2 0 0" name="ceilinglight" />
+	<AreaLight intensity="0.5" position="0 0 -8" edge1="0 0 2" edge2="2 0 0" name="camlight" />
+	</Lights>
+
+	<Geometry>
+	<!--
+	<Cylinder radius="1" height="2" capped="false" name="cylinder" />
+	<Sphere radius="1" name="sphere" />
+	<Plane edge1="0 0  8" edge2=" 8 0 0" name="smallplane" />
+	<Mesh src="triceratops.obj" name="triceratops" />
+	<Mesh src="teapot.obj" name="teapot" />
+	-->
+	<Plane edge1="16 0 0" edge2="0 16 0" name="wall"/>
+	</Geometry>
+
+	<Materials>
+	<Material diffuse_color="0.70 0.14 0.08" name="redwall" />
+	<Material diffuse_color="0.20 0.60 0.00" name="greenwall" />
+	<Material diffuse_color="0.88 0.75 0.45" name="beigewall" />
+	</Materials>
+
+	<Scene camera="cam0" lights="ceilinglight" background="0.3 0.3 0.3" >
+	<Translate vector="0 0 0">
+
+	<Translate vector="8 -8 -8"> <Rotate axis="0 1 0" angle="-90">
+			<Shape geometry="wall" material="redwall" />
+	</Rotate> </Translate>
+
+	<Translate vector="-8 -8 -8"> <Rotate axis="0 1 0" angle="-90">
+			<Shape geometry="wall" material="greenwall" />
+	</Rotate> </Translate>
+
+	<Translate vector="-8 -8 8"> <Rotate axis="0 1 0" angle="0">
+			<Shape geometry="wall" material="beigewall" />
+	</Rotate> </Translate>
+
+	<Translate vector="-8  8 -8"> <Rotate axis="1 0 0" angle="90">
+			<Shape geometry="wall" material="beigewall" />
+	</Rotate> </Translate>
+
+	<Translate vector="-8 -8 -8"> <Rotate axis="1 0 0" angle="90">
+			<Shape geometry="wall" material="beigewall" />
+	</Rotate> </Translate>
+
+	</Translate>
+	</Scene>
+</Sdl>
+<!-- vim: ft=xml
+-->

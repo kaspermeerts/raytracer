@@ -88,7 +88,33 @@ static int ray_plane_intersect(Ray ray, Plane plane, float t[1], Vec3 normal[1])
 		return 0;
 
 	t[0] = test_t;
-	normal[0] = n;
+	if (vec3_dot(d, n) < 0)
+		normal[0] = n;
+	else
+		normal[0] = vec3_scale(-1, n);
+
+	return 1;
+}
+
+static int ray_disk_intersect(Ray ray, Disk disk, float t[1], Vec3 normal[1])
+{
+	double tt, xx, yy;
+	Vec3 o = ray.origin, d = ray.direction;
+
+	if (d.z == 0)
+		return 0;
+
+	tt = -o.z/d.z;
+	xx = o.x + tt*d.x;
+	yy = o.y + tt*d.y;
+	if (SQUARE(xx) + SQUARE(yy) > SQUARE(disk.radius))
+		return 0;
+
+	t[0] = tt;
+	if (o.z + ray.near*d.z >= 0)
+		normal[0] = (Vec3) {0, 0,  1};
+	else
+		normal[0] = (Vec3) {0, 0, -1};
 
 	return 1;
 }
@@ -476,6 +502,9 @@ static bool ray_surface_intersect(Ray ray, const Surface *surf, Hit *hit)
 	case SHAPE_PLANE:
 		hits = ray_plane_intersect(tray, shape->u.plane, ts, tnormals);
 		break;
+	case SHAPE_DISK:
+		hits = ray_disk_intersect(tray, shape->u.disk, ts, tnormals);
+		break;
 	case SHAPE_SPHERE:
 		hits = ray_sphere_intersect(tray, shape->u.sphere, ts, tnormals);
 		break;
@@ -510,7 +539,7 @@ static bool ray_surface_intersect(Ray ray, const Surface *surf, Hit *hit)
 		bool t0_ok = ts[0] >= ray.near && ts[0] <= ray.far;
 		bool t1_ok = ts[1] >= ray.near && ts[1] <= ray.far;
 
-		     if (!t0_ok &&  !t1_ok)
+		     if (!t0_ok && !t1_ok)
 		{
 			return false;
 		}

@@ -10,9 +10,15 @@
 #include "ray.h"
 #include "shading.h"
 #include "ppm.h"
+#include "timer.h"
 
 SDL_Surface *display_surface;
 SDL_Surface *blit_surface;
+
+typedef struct Pixel {
+	int x;
+	int y;
+} Pixel;
 
 static bool init_SDL(void)
 {
@@ -68,13 +74,28 @@ static void put_pixel(SDL_Surface *surface, int x, int y, Colour c)
 	*(uint32_t *)p = SDL_MapRGB(surface->format, r, g, b);
 }
 
+static void shuffle_pixels(Pixel *pixels, int w, int h)
+{
+	const int n = w*h;
+
+	for (int i = n - 1; i >= 1; i--)
+	{
+		int j = rand() % (i + 1);
+		Pixel dummy;
+		dummy = pixels[i];
+		pixels[i] = pixels[j];
+		pixels[j] = dummy;
+	}
+}
+
 int main(int argc, char **argv)
 {
+	Timer *render_timer;
 	Sdl *sdl;
 	FILE *out;
 	Colour *buffer;
-	clock_t start, stop;
-	double ms;
+	Pixel *pixels;
+	int num_pixels;
 
 	SDL_Event event = {0};
 
@@ -88,47 +109,66 @@ int main(int argc, char **argv)
 	if (!init_SDL())
 		return 1;
 
-	buffer = calloc(config->width*config->height, sizeof(Colour));
+	num_pixels = config->width * config->height;
+	buffer = calloc(num_pixels, sizeof(Colour));
+	pixels = calloc(num_pixels, sizeof(Pixel));
+	for (int j = 0; j < config->height; j++)
+	for (int i = 0; i < config->width; i++)
+	{
+		pixels[j*config->width + i].x = i;
+		pixels[j*config->width + i].y = j;
+	}
+	srand(time(NULL));
+	shuffle_pixels(pixels, config->width, config->height);
+	srand(0x20071208);
 
 	/* START */
-	start = clock();
+	render_timer = timer_start("Rendering");
 
-	for (int j = 0; j < config->height; j++)
-	{
-	for (int i = 0; i < config->width; i++)
+	for (int i = 0; i < num_pixels; i++)
 	{
 		Camera *cam = scene->camera;
 		Colour c;
 		Ray r;
+		int x = pixels[i].x, y = pixels[i].y;
 
 		/* The last parameter is the near plane, which is irrelevant for
 		 * the moment. */
-		r = camera_ray(cam, i, j, 1);
+		r = camera_ray(cam, x, y, 1);
 
 		c = ray_colour(r, 10);
 
-		buffer[config->width*j + i] = c;
-		put_pixel(display_surface, i, j, c);
-	}
-		SDL_Flip(display_surface);
-		while (SDL_PollEvent(&event))
-			if (event.type == SDL_QUIT)
-				return 0;
+		buffer[i] = c;
+		put_pixel(display_surface, x, y, c);
+		if (i % config->width == 0)
+		{
+			SDL_Flip(display_surface);
+			while (SDL_PollEvent(&event))
+				if (event.type == SDL_QUIT)
+					return 0;
+		}
 	}
 
 	/* STOP */
-	stop = clock();
-
-	ms = ((stop - start)*1000.0)/CLOCKS_PER_SEC;
-	printf("Rendering complete in %d s %03d ms\n", (int) ms/1000, 
-			(int) (ms - floor(ms/1000)*1000) );
-	printf("%.2f kilopixels per second\n", 
-			(config->width*config->height/1000.0/(ms/1000.0)));
+	timer_stop(render_timer);
+	timer_diff_print(render_timer);
+	printf("%.2f kilopixels per second\n",
+			num_pixels/1000./(timer_diff(render_timer)));
 
 	out = fopen("ray.ppm", "w");
 	ppm_write(buffer, config->width, config->height, out);
 	free(buffer);
 	fclose(out);
+
+	SDL_Flip(display_surface);
+	while(1)
+	{
+		while (SDL_WaitEvent(&event))
+			if (event.type == SDL_QUIT)
+				return 0;
+			else if (event.type == SDL_VIDEOEXPOSE)
+				SDL_Flip(display_surface);
+	}
 
 	return 0;
 }

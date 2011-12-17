@@ -3,8 +3,8 @@
 
 <Sdl>
 	<Config
-		width =  "1280"
-		height = "800"
+		width =  "1024"
+		height = "1024"
 		antialiasing = "true"
 		aa_samples = "5"
 		shadow_samples = "4"
@@ -24,13 +24,13 @@
 	</Lights>
 
 	<Geometry>
-	<Cylinder radius="1" height="2" capped="false" name="cyl0" />
-	<Sphere radius="1" name="sph0" />
-	<Cone radius="1" height="2" capped="false" name="con0" />
-	<Torus innerRadius="1" outerRadius="2" name="tor0" />
+	<Cylinder radius="1" height="2" capped="false" name="cylinder" />
+	<Sphere radius="1" name="sphere" />
+	<Cone radius="1" height="2" capped="false" name="cone" />
 	<Mesh src="teapot.obj" name="teapot" />
 	<Plane edge1="0 0 16" edge2="16 0 0" name="plane"/>
 	<Plane edge1="0 0  8" edge2=" 8 0 0" name="smallplane" />
+	<Disk radius="6" name="disk" />
 	</Geometry>
 
 	<Materials>
@@ -46,24 +46,26 @@
 			specular_exponent="400" name="blueplastic" />
 	</Materials>
 
-	<Scene camera="cam0" lights="arealight,camlight" background="0.3 0.3 0.3"
+	<Scene camera="cam0" lights="light0,light1" background="0.3 0.3 0.3"
 			cubemap="cubemap/uffizi_gallery">
 	<Translate vector="0 0 0">
 
 		<Translate vector="2.4 2 2.4">
 			<Rotate axis="1 0 0" angle="90">
-			<Shape geometry="cyl0" material="redplastic" />
+				<Shape geometry="cylinder" material="redplastic" />
 			</Rotate>
 		</Translate>
 		<Translate vector=" 0  0  0">
 			<Shape geometry="teapot" material="greenplastic" />
 		</Translate>
 		<Translate vector="-2  1  2">
-			<Shape geometry="sph0" material="blueplastic" />
+			<Shape geometry="sphere" material="blueplastic" />
 		</Translate>
 
-		<Translate vector="-4 0 -4">
-			<Shape geometry="smallplane" material="greyplastic" />
+		<Translate vector="-0 0 -0">
+			<Rotate axis="1 0 0" angle="90">
+				<Shape geometry="disk" material="greyplastic" />
+			</Rotate>
 		</Translate>
 
 	</Translate>

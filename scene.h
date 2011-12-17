@@ -17,6 +17,10 @@ typedef struct Camera {
 	char *name;
 } Camera;
 
+typedef struct Disk {
+	float radius;
+} Disk;
+
 typedef struct Sphere {
 	float radius;
 } Sphere;
@@ -39,14 +43,14 @@ typedef struct Torus {
 } Torus;
 
 typedef struct Shape {
-	enum { SHAPE_PLANE, SHAPE_SPHERE, SHAPE_CYLINDER, SHAPE_CONE, SHAPE_TORUS,
+	enum { SHAPE_PLANE, SHAPE_DISK, SHAPE_SPHERE, SHAPE_CYLINDER, SHAPE_CONE,
 			SHAPE_MESH } type;
 	union {
 		Plane plane;
+		Disk disk;
 		Sphere sphere;
 		Cylinder cylinder;
 		Cone cone;
-		Torus torus;
 		Mesh *mesh;
 	} u;
 	char *name;

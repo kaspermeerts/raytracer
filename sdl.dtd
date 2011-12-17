@@ -6,7 +6,7 @@
 <!ATTLIST Config
 	width						CDATA			"512"
 	height						CDATA			"512"
-	antialiasing				CDATA			"false"
+	antialiasing				(false|true)	"false"
 	aa_samples					CDATA			"4"
 	shadow_samples				CDATA			"9"
 	max_reflections				CDATA			"5"
@@ -45,13 +45,19 @@
 	name						ID				#REQUIRED
 >
 
-<!ELEMENT Geometry ((Plane|Sphere|Cylinder|Cone|Torus|Teapot|Mesh)+)>
+<!ELEMENT Geometry ((Plane|Disk|Sphere|Cylinder|Cone|Mesh)+)>
 <!ATTLIST Geometry>
 
 <!ELEMENT Plane EMPTY>
 <!ATTLIST Plane
 	edge1						CDATA			#REQUIRED
 	edge2						CDATA			#REQUIRED
+	name						ID				#REQUIRED
+>
+
+<!ELEMENT Disk EMPTY>
+<!ATTLIST Disk
+	radius						CDATA			#REQUIRED
 	name						ID				#REQUIRED
 >
 
@@ -74,13 +80,6 @@
 	radius						CDATA			#REQUIRED
 	height						CDATA			#REQUIRED
 	capped						(true|false)	"true"
-	name						ID				#REQUIRED
->
-
-<!ELEMENT Torus EMPTY>
-<!ATTLIST Torus
-	innerRadius					CDATA			#REQUIRED
-	outerRadius					CDATA			#REQUIRED
 	name						ID				#REQUIRED
 >
 
@@ -109,8 +108,7 @@
 	specular_color				CDATA			"1 1 1"
 	specular_exponent			CDATA			"100"
 	reflect						CDATA			"0"
-	refract						CDATA			"0"
-	refractive_index			CDATA			"1"
+	glossiness					CDATA			"0"
 	name						ID				#REQUIRED
 >
 

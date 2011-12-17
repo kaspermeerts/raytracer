@@ -1,6 +1,8 @@
 CC = gcc
 DEFINES =
-WARNINGS = -Wextra -Wall -Wwrite-strings -Wshadow -Wpointer-arith -Wcast-qual -Wstrict-prototypes -Wmissing-prototypes -Wstrict-aliasing -Wno-pointer-sign -pedantic
+WARNINGS = -Wextra -Wall -Wwrite-strings -Wshadow -Wpointer-arith -Wcast-qual \
+		-Wstrict-prototypes -Wmissing-prototypes -Wstrict-aliasing \
+		-Wno-pointer-sign -Wswitch-enum -pedantic
 #OPTIM = -ffast-math -O0
 OPTIM = -ffast-math -O4 -flto -finline-limit=2000000000 -DNDEBUG
 CFLAGS = $(WARNINGS) $(DEFINES) $(OPTIM) -std=c99 -pipe -ggdb

@@ -82,6 +82,7 @@ static bool import_config(xmlNode *node)
 	internal_config.antialiasing = parse_bool(xmlGetProp(node, "antialiasing"));
 	internal_config.aa_samples = parse_int(xmlGetProp(node, "aa_samples"));
 	internal_config.shadow_samples = parse_int(xmlGetProp(node, "shadow_samples"));
+	internal_config.reflection_samples = parse_int(xmlGetProp(node, "reflection_samples"));
 	internal_config.max_reflections = parse_int(xmlGetProp(node, "max_reflections"));
 
 	config = &internal_config;

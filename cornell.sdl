@@ -3,8 +3,8 @@
 
 <Sdl>
 	<Config
-		width =  "300"
-		height = "300"
+		width =  "500"
+		height = "500"
 		antialiasing = "false"
 		aa_samples = "4"
 		shadow_samples = "1"
@@ -12,14 +12,14 @@
 	/>
 
 	<Cameras>
-	<Camera position="0 0 -16" direction="0 0 1" up="0 1 0" fovy="90" 
+	<Camera position="0 0 -32" direction="0 0 1" up="0 1 0" fovy="45" 
 	name="cam0" />
 	</Cameras>
 
 	<Lights>
 	<PointLight position="0 8 0" intensity="0.9" color="1 1 1" name="light0" />
 	<PointLight position="5 1 5" intensity="0.0" color="1 1 0" name="light1" />
-	<AreaLight intensity="0.5" position="-1 7.5 -1" edge1="0 0 2" edge2="2 0 0" name="ceilinglight" />
+	<AreaLight intensity="0.5" position="-1 4 -1" edge1="0 0 2" edge2="2 0 0" name="ceilinglight" />
 	<AreaLight intensity="0.5" position="0 0 -8" edge1="0 0 2" edge2="2 0 0" name="camlight" />
 	</Lights>
 

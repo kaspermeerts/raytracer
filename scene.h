@@ -96,6 +96,7 @@ typedef struct Config {
 	bool antialiasing;
 	int aa_samples;
 	int shadow_samples;
+	int reflection_samples;
 	int max_reflections;
 } Config;
 

@@ -136,9 +136,9 @@ int main(int argc, char **argv)
 		 * the moment. */
 		r = camera_ray(cam, x, y, 1);
 
-		c = ray_colour(r, 10);
+		c = ray_colour(r, 0);
 
-		buffer[i] = c;
+		buffer[config->width*y + x] = c;
 		put_pixel(display_surface, x, y, c);
 		if (i % config->width == 0)
 		{

@@ -21,16 +21,20 @@ static Colour hit_light_colour(Hit *hit, Light *light, Vec3 cam_dir)
 		Ray shadow_ray;
 		Hit dummy;
 		Colour diff_col, spec_col;
-		int p, q;
-		float alpha, beta;
-		p = j % n;
-		q = j / n;
-		alpha = p / (float) n + drand();
-		beta =  q / (float) n + drand();
+
 		if (light->type == LIGHT_AREA)
+		{
+			int p, q;
+			float alpha, beta;
+			p = j % n;
+			q = j / n;
+			alpha = p / (float) n + drand();
+			beta =  q / (float) n + drand();
+
 			light_pos = vec3_add(vec3_add(light->position,
 					vec3_scale(alpha, light->plane.edge1)),
 					vec3_scale(beta, light->plane.edge2));
+		}
 		else
 			light_pos = light->position;
 
@@ -53,13 +57,67 @@ static Colour hit_light_colour(Hit *hit, Light *light, Vec3 cam_dir)
 	return light_total;
 }
 
-Colour ray_colour(Ray ray, int ttl)
+static Vec3 vec3_orthogonal_vec3(Vec3 v)
+{
+	const Vec3 n1 = (Vec3) {1, 0, 0}, n2 = (Vec3) {0, 1, 0};
+
+	if (fabs(vec3_dot(v, n1)) < vec3_length(v)/M_SQRT2)
+		return vec3_cross(v, n1);
+	else
+		return vec3_cross(v, n2);
+}
+
+static Colour hit_reflection_colour(Hit *hit, Ray ray, int depth)
+{
+	Colour total;
+	Material *mat = hit->surface->material;
+	Ray rray;
+
+	/* Non-reflecting material */
+	if (mat->reflect <= 0.0)
+		return BLACK;
+
+	/* First, create the unperturbed reflection ray */
+	rray.direction = vec3_reflect(ray.direction, hit->normal);
+	rray.origin = vec3_add(hit->position, vec3_scale(1e-2, rray.direction));
+	rray.near = 0;
+	rray.far = HUGE_VAL;
+
+	/* Only gloss primary and the first reflected rays.
+	 * This is a crude form of importance sampling */
+	if (mat->glossiness <= 0.0 || depth > 1)
+		total = ray_colour(rray, depth + 1);
+	else
+	{
+		total = BLACK;
+		for (int i = 0; i < config->reflection_samples; i++)
+		{
+			Ray pray = rray; /* Perturbed ray */
+			Vec3 a, b;
+
+			/* The ray direction needs to be normalized for this to work */
+			pray.direction = vec3_normalize(pray.direction);
+			/* Create an orthonormal basis for the tangent vector space */
+			a = vec3_normalize(vec3_orthogonal_vec3(pray.direction));
+			b = vec3_normalize(vec3_cross(pray.direction, a));
+
+			a = vec3_scale(mat->glossiness * (2*drand() - 1), a);
+			b = vec3_scale(mat->glossiness * (2*drand() - 1), b);
+			pray.direction = vec3_add(pray.direction, vec3_add(a, b));
+			total = colour_add(total, ray_colour(pray, depth + 1));
+		}
+		total = colour_scale(1./config->reflection_samples, total);
+	}
+	return colour_mul(mat->specular_colour, colour_scale(mat->reflect, total));
+}
+
+Colour ray_colour(Ray ray, int depth)
 {
 	Hit hit;
 	Colour total;
-	Vec3 cam_dir;
+	Vec3 cam_dir = vec3_normalize(vec3_scale(-1, ray.direction));
 
-	if (ttl < 0)
+	if (depth > config->max_reflections)
 		return BLACK;
 
 	if (!ray_intersect(ray, &hit))
@@ -70,25 +128,14 @@ Colour ray_colour(Ray ray, int ttl)
 			return scene->background;
 	}
 
-	cam_dir = vec3_normalize(vec3_scale(-1, ray.direction));
-
 	total = BLACK;
+	/* Direct contributions from light */
 	for (int i = 0; i < scene->num_lights; i++)
-		total = colour_add(total, hit_light_colour(&hit, scene->light[i], cam_dir));
+		total = colour_add(total,
+				hit_light_colour(&hit, scene->light[i], cam_dir));
 
-	if (hit.surface->material->reflect > 0.0)
-	{
-		Ray rray;
-		Colour reflect_colour;
-
-		rray.direction = vec3_reflect(ray.direction, hit.normal);
-		rray.origin = vec3_add(hit.position, vec3_scale(1e-2, rray.direction));
-		rray.near = 0;
-		rray.far = HUGE_VAL;
-
-		reflect_colour = ray_colour(rray, ttl - 1);
-		total = colour_add(total, colour_scale(hit.surface->material->reflect, colour_mul(hit.surface->material->specular_colour, reflect_colour)));
-	}
+	/* Indirect contributions from reflections */
+	total = colour_add(total, hit_reflection_colour(&hit, ray, depth));
 
 	return total;
 }

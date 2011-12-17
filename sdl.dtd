@@ -9,6 +9,7 @@
 	antialiasing				(false|true)	"false"
 	aa_samples					CDATA			"4"
 	shadow_samples				CDATA			"9"
+	reflection_samples			CDATA			"10"
 	max_reflections				CDATA			"5"
 >
 

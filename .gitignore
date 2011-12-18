@@ -1,4 +1,6 @@
 cubemap/
+*.l.*
+*.y.*
 *.a
 *.o
 *.ppm

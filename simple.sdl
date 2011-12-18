@@ -41,7 +41,7 @@
 
    </Materials>
 
-	<Scene camera="cam1" lights="light0" background="0.3 0.3 0.3" cubemap="cubemap/uffizi_gallery" >
+	<Scene camera="cam0" lights="light0" background="0.3 0.3 0.3" cubemap="cubemap/uffizi_gallery" >
 		<Rotate axis="0 1 0" angle="0" >
 				<Shape geometry="teapot" material="mat0" />
 		</Rotate>

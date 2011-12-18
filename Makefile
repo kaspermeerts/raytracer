@@ -12,14 +12,13 @@ RASTER_SRC = raster.c $(COMMON_SRC)
 INCFLAGS = -I. `xml2-config --cflags`
 LDFLAGS = -Lpnglite -lpnglite -lm -Lobjreader -lobjreader `xml2-config --libs`
 
-#all: treetest rayviewer raytracer rasteriser
-all: raytracer
+all: objreader/libobjreader.a pnglite/libpnglite.a rayviewer raytracer rasteriser
 
 objreader/libobjreader.a:
-	$(MAKE) -C objreader libobjreader.a
+	@$(MAKE) -C objreader libobjreader.a
 
 pnglite/libpnglite.a:
-	$(MAKE) -C pnglite libpnglite.a
+	@$(MAKE) -C pnglite libpnglite.a
 
 rayviewer: rayviewer.c $(RAY_SRC)
 	@echo "	CC rayviewer"

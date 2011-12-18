@@ -84,6 +84,7 @@ static bool import_config(xmlNode *node)
 	internal_config.shadow_samples = parse_int(xmlGetProp(node, "shadow_samples"));
 	internal_config.reflection_samples = parse_int(xmlGetProp(node, "reflection_samples"));
 	internal_config.max_reflections = parse_int(xmlGetProp(node, "max_reflections"));
+	internal_config.depth_of_field = parse_bool(xmlGetProp(node, "depth_of_field"));
 
 	config = &internal_config;
 	return true;
@@ -120,6 +121,7 @@ static bool import_cameras(Sdl *sdl, xmlNode *node, int n)
 		M(2, 0) = cam->u.z; M(2, 1) = cam->v.z; M(2, 2) = cam->w.z;
 #undef M
 		cam->orientation = quat_from_mat3(m);
+		cam->near_plane = parse_double(xmlGetProp(cur_node, "near_plane"));
 	}
 	assert(i == n);
 
@@ -528,6 +530,7 @@ static bool import_scene(Sdl *sdl, xmlNode *node, int n)
 	Scene *rw_scene = &sdl->internal_scene;
 	const char *cam_name, *light_names, *cubemap_file;
 	MatrixStack *model_matrix;
+	Timer *cube_timer;
 
 	n = n; /* UNUSED */
 
@@ -564,7 +567,10 @@ static bool import_scene(Sdl *sdl, xmlNode *node, int n)
 	cubemap_file = xmlGetProp(node, "cubemap");
 	if (cubemap_file[0] != '\0')
 	{
+		cube_timer = timer_start("Loading cubemap");
 		rw_scene->environment_map = cubemap_load(cubemap_file);
+		timer_stop(cube_timer);
+		timer_diff_print(cube_timer);
 		if (!rw_scene->environment_map)
 			return NULL;
 	} else
@@ -650,7 +656,7 @@ static bool import_sdl(Sdl *sdl, xmlDoc *doc)
 	{
 		build_bbox(surf);
 
-		if (surf->shape->type == SHAPE_MESH)
+		if (surf->shape->type == SHAPE_MESH && surf->shape->u.mesh->kd_tree == NULL)
 		{
 			Timer *kd_timer;
 			printf("Building kd-tree for %s\n", surf->shape->name);

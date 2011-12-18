@@ -1,0 +1,78 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE Sdl SYSTEM "sdl.dtd">
+
+<Sdl>
+	<Config
+		width =  "512"
+		height = "512"
+		antialiasing = "false"
+		aa_samples = "5"
+		shadow_samples = "4"
+		reflection_samples = "2"
+		max_reflections = "5"
+	/>
+
+	<Cameras>
+	<Camera position="0 10 10" direction="0 -4 -10" up="0 1 0" fovy="60" 
+	name="cam0" />
+	</Cameras>
+
+	<Lights>
+	<PointLight position="0 10 0" intensity="0.9" color="1 1 1" name="light0" />
+	<AreaLight intensity="0.5" position="0 40 0" edge1="0 0 2" edge2="2 0 0" name="arealight" />
+	<AreaLight intensity="0.5" position="0 10 10" edge1="0 0 2" edge2="2 0 0" name="camlight" />
+	</Lights>
+
+	<Geometry>
+	<Mesh src="teapot.obj" name="teapot" />
+	<Mesh src="tablecloth.obj" name="tablecloth" />
+	<Mesh src="table.obj" name="table" />
+	<Cylinder radius="1" height="2" capped="true" name="cylinder" />
+	<Sphere radius="1" name="sphere" />
+	<!--
+	<Cone radius="1" height="2" capped="false" name="cone" />
+	<Plane edge1="0 0 16" edge2="16 0 0" name="plane"/>
+	<Disk radius="6" name="disk" /> -->
+	</Geometry>
+
+	<Materials>
+	<Material diffuse_color="0.75 0.75 1" specular_exponent="400"
+			name="greyplastic" />
+	<Material diffuse_color="1 0.74 0.77" 
+			specular_exponent="400" name="pinkplastic" />
+	<Material diffuse_color="0.44 0.22 0.88" 
+			specular_exponent="400" name="blue" />
+	<Material diffuse_color="0.70 0.14 0.08" name="red" />
+	<Material diffuse_color="0.20 0.60 0.00" name="green" />
+	</Materials>
+
+	<Scene camera="cam0" lights="light0,camlight" background="0.3 0.3 0.3"
+			cubemap="cubemap/creek">
+	<Translate vector="0 0 0">
+
+	<Shape geometry="tablecloth" material="pinkplastic" />
+	<Translate vector="0 7.3 0">
+
+		<Translate vector="-3 1 3">
+			<Shape geometry="sphere" material="red" />
+		</Translate>
+
+		<Translate vector="0 0 0">
+			<Scale scale="1 1 1">
+			<Shape geometry="teapot" material="green" />
+			</Scale>
+		</Translate>
+
+		<Translate vector="3 0 -3">
+			<Rotate axis="1 0 0" angle="-90">
+			<Shape geometry="cylinder" material="red" />
+			</Rotate>
+		</Translate>
+
+	</Translate>
+
+	</Translate>
+	</Scene>
+</Sdl>
+<!-- vim: ft=xml
+-->

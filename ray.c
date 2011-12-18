@@ -4,16 +4,16 @@
 #include "ray.h"
 
 struct TriangleHit {
-	float t;
+	double t;
 	float a;
 	float b;
 	float c;
 	Triangle triangle;
 };
 
-float drand(void)
+double drand(void)
 {
-	return rand()/((float) RAND_MAX);
+	return rand()/((double) RAND_MAX);
 }
 
 static Ray cam_ray_internal(Camera *cam, int i, int j, float offx, float offy,
@@ -398,7 +398,7 @@ static bool ray_kd_tree_intersect(Ray ray, const Vec3 *vertex_list,
 	struct TriangleHit hit_near, hit_far;
 	bool did_near, did_far;
 	Ray ray_near = ray, ray_far = ray;
-	float clip_t;
+	double clip_t;
 
 	/* In a leaf we have to check all triangles */
 	if (node->leaf)
@@ -421,7 +421,7 @@ static bool ray_kd_tree_intersect(Ray ray, const Vec3 *vertex_list,
 		break;
 	}
 
-	if (vec3_dot(ray.direction, plane_normal[node->axis]) >= 0.0)
+	if (vec3_dot(ray.direction, plane_normal[node->axis]) > 0.0)
 	{
 		node_near = node->left;
 		node_far = node->right;
@@ -450,7 +450,7 @@ static bool ray_kd_tree_intersect(Ray ray, const Vec3 *vertex_list,
 	/* The test (hit_near.t < clip_t) is important, as it is possible a
 	 * primitive in the far node will intersect closer than this primitive,
 	 * which lies only partially in the near node. */
-	if (did_near && hit_near.t < clip_t)
+	if (did_near && hit_near.t <= clip_t)
 	{
 		*hit = hit_near;
 		return true;

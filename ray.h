@@ -15,11 +15,11 @@ typedef struct Hit {
 	Surface *surface;
 	Vec3 position;
 	Vec3 normal;
-	float t; /* Parameter of the ray equation: v = o + t*d */
+	double t; /* Parameter of the ray equation: v = o + t*d */
 } Hit;
 
 
-float drand(void); /* TODO FIXME XXX THIS DOESN'T BELONG HERE */
+double drand(void); /* TODO FIXME XXX THIS DOESN'T BELONG HERE */
 Ray camera_ray_aa(Camera *cam, int i, int j, int sample, double near);
 Ray camera_ray(Camera *cam, int i, int j, double near);
 bool ray_intersect(Ray ray, Hit *hit);

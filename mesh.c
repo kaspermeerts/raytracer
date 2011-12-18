@@ -198,6 +198,7 @@ Mesh *mesh_load(const char *filename)
 		return NULL;
 	}
 	mesh = malloc(sizeof(Mesh));
+	mesh->kd_tree = NULL;
 	if (!obj_first_pass(fd, mesh))
 	{
 		printf("Error parsing file %s\n", filename);
@@ -389,7 +390,7 @@ static void build_kd_subtree(const Vec3 *vertex_list, KdNode *tree, int depth,
 	}
 
 	/* Now, split the tree in twain at this location */
-	split_kd_tree(vertex_list, tree, axis, best_location);
+	split_kd_tree(vertex_list, tree, axis, best_location + 1e-3);
 	bbox_split(bbox, axis, best_location, &left_box, &right_box);
 
 	switch (axis)

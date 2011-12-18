@@ -29,6 +29,29 @@ static void print_progressbar(int progress, int total)
 	fflush(stdout);
 }
 
+static Colour pixel_colour(int x, int y)
+{
+	Camera *cam = scene->camera;
+	Colour c;
+	Ray r;
+
+	if (config->antialiasing)
+	{
+		c = BLACK;
+		for (int k = 0; k < SQUARE(config->aa_samples); k++)
+		{
+			r = camera_ray_aa(cam, x, y, k, cam->near_plane);
+			c = colour_add(c, ray_colour(r, 0));
+		}
+		c = colour_scale(1.0/SQUARE(config->aa_samples), c);
+	} else
+	{
+		r = camera_ray(cam, x, y, 1);
+		c = ray_colour(r, 0);
+	}
+
+	return c;
+}
 int main(int argc, char **argv)
 {
 	Timer *render_timer;
@@ -54,31 +77,10 @@ int main(int argc, char **argv)
 
 	for (int j = 0; j < height; j++)
 	{
-	for (int i = 0; i < width; i++) /* Indentation doesn't help readability */
-	{
-		Camera *cam = scene->camera;
-		Colour c;
-		Ray r;
+		for (int i = 0; i < width; i++)
+			buffer[width*j + i] = pixel_colour(i, j);
 
-		if (config->antialiasing)
-		{
-			c = BLACK;
-			for (int k = 0; k < SQUARE(config->aa_samples); k++)
-			{
-				r = camera_ray_aa(cam, i, j, k, 1);
-
-				c = colour_add(c, ray_colour(r, 0));
-			}
-			c = colour_scale(1.0/SQUARE(config->aa_samples), c);
-		} else
-		{
-			r = camera_ray(cam, i, j, 1);
-			c = ray_colour(r, 0);
-		}
-
-		buffer[width*j + i] = c;
-	}
-	print_progressbar(j, height - 1);
+		print_progressbar(j, height - 1);
 	}
 	printf("\n");
 

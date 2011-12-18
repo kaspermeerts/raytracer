@@ -42,7 +42,7 @@ static Colour hit_light_colour(Hit *hit, Light *light, Vec3 cam_dir)
 
 		shadow_ray.direction = light_dir;
 		shadow_ray.origin = vec3_add(hit->position,
-				vec3_scale(1e-2, shadow_ray.direction));
+				vec3_scale(1e-4, shadow_ray.direction));
 		shadow_ray.near = 0;
 		shadow_ray.far = vec3_length(vec3_sub(light_pos, hit->position));
 		if (ray_intersect(shadow_ray, &dummy))

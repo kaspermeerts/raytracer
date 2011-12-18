@@ -14,6 +14,7 @@ typedef struct Camera {
 	Vec3 u, v, w; /* For the raytracer */
 	Quaternion orientation; /* For the rasteriser */
 	float fov;
+	float near_plane;
 	char *name;
 } Camera;
 
@@ -98,6 +99,7 @@ typedef struct Config {
 	int shadow_samples;
 	int reflection_samples;
 	int max_reflections;
+	bool depth_of_field;
 } Config;
 
 const Config *config;

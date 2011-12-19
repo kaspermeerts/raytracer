@@ -103,7 +103,7 @@ static Colour fragment_shader(Material *mat, float a, float b, float c)
 	L = vec3_interpolate(a, b, c, 
 			varying[0].light_dir, varying[1].light_dir, varying[2].light_dir);
 
-	return light_mat_colour(light, mat, L, C, N);
+	return light_mat_colour(light, mat, C, L, N);
 }
 
 static void raster_triangle(Raster *raster, Material *mat, Screen3 coord[3])
@@ -290,6 +290,7 @@ int main(int argc, char **argv)
 		tesselate_shape(&sdl->shape[i]);
 
 	raster = raster_new(config->width, config->height);
+	raster_fill(raster, scene->background);
 	rasterise(raster);
 
 	out = fopen("raster.ppm", "wb");

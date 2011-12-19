@@ -19,6 +19,13 @@ Raster *raster_new(int width, int height)
 	return raster;
 }
 
+void raster_fill(Raster *raster, Colour c)
+{
+	for (int i = 0; i < raster->width; i++)
+		for(int j = 0; j < raster->height; j++)
+			raster_pixel(raster, i, j, c);
+}
+
 void raster_destroy(Raster *raster)
 {
 	free(raster->zbuffer);

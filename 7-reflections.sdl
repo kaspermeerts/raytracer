@@ -7,7 +7,7 @@
 		height = "640"
 		antialiasing = "true"
 		aa_samples = "5"
-		shadow_samples = "1"
+		shadow_samples = "5"
 		reflection_samples = "8"
 		max_reflections = "5"
 	/>
@@ -18,17 +18,16 @@
 	</Cameras>
 
 	<Lights>
-	<PointLight position="0 8 0" intensity="0.9" color="1 1 1" name="light0" />
+	<AreaLight position="0 8 8" intensity="0.9" edge1="1 0 0" edge2="0 0 1" color="1 1 1" name="light0" />
 	<PointLight position="5 1 5" intensity="0.0" color="1 1 0" name="light1" />
-	<PointLight position = "0 0 -8" intensity="1.0" color="1 1 1" name="backlight" />
+	<AreaLight position = "0 8 -8" intensity="0.6" color="1 1 1" edge1="1 0 0" edge2="0 0 3" name="backlight" />
 	<AreaLight intensity="0.5" position="-1 5 -1" edge1="0 0 2" edge2="2 0 0" name="arealight" />
 	<AreaLight intensity="0.5" position="5 5 5" edge1="0 0 2" edge2="2 0 0" name="camlight" />
 	</Lights>
 
 	<Geometry>
-	<Cylinder radius="1" height="2" capped="false" name="cylinder" />
+	<Cylinder radius="1" height="2" capped="true" name="cylinder" />
 	<Sphere radius="1" name="sphere" />
-	<Cone radius="1" height="2" capped="false" name="cone" />
 	<Mesh src="teapot.obj" name="teapot" />
 	<Plane edge1="0 0 16" edge2="16 0 0" name="plane"/>
 	<Plane edge1="0 0  8" edge2=" 8 0 0" name="smallplane" />
@@ -43,14 +42,14 @@
 	<Material diffuse_color="0.88 0.44 0.22" specular_color="1 1 1"
 			specular_exponent="400" name="redplastic" />
 	<Material diffuse_color="0.22 0.88 0.44" specular_color="1 1 1"
-			specular_exponent="400" reflect="0.7" glossiness = "0.5"
+			specular_exponent="400" reflect="0.5" glossiness = "0.0"
 			name="greenplastic" />
 	<Material diffuse_color="0.44 0.22 0.88" specular_color="1 1 1"
 			specular_exponent="400" name="blueplastic" />
 	</Materials>
 
 	<Scene camera="cam0" lights="light0,backlight" background="0.3 0.3 0.3"
-			> <!-- cubemap="cubemap/uffizi_gallery"> -->
+			 cubemap="cubemap/uffizi_gallery">
 	<Translate vector="0 0 0">
 
 		<Translate vector="2.4 1.99 4.4">

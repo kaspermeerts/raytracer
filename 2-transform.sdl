@@ -6,32 +6,25 @@
 		width =  "512"
 		height = "512"
 		antialiasing = "false"
-		aa_samples = "4"
-		shadow_samples = "1"
+		aa_samples = "3"
+		shadow_samples = "4"
 		max_reflections = "5"
+		reflection_samples = "10"
 	/>
 
 	<Cameras>
-	<Camera position="0 0 -2" direction="0 0 1" up="0 1 0" fovy="160" 
+	<Camera position="0 4.5 8" direction="0 -4 -8" up="0 1 0" fovy="60" 
 	name="cam0" />
 	</Cameras>
 
 	<Lights>
-	<PointLight position="0 8 0" intensity="0.9" color="1 1 1" name="light0" />
+	<PointLight position="0 4.5 8" intensity="0.9" color="1 1 1" name="light0" />
 	<PointLight position="5 1 5" intensity="0.0" color="1 1 0" name="light1" />
-	<AreaLight intensity="0.5" position="-1 5 -1" edge1="0 0 2" edge2="2 0 0" name="arealight" />
-	<AreaLight intensity="0.5" position="5 5 5" edge1="0 0 2" edge2="2 0 0" name="camlight" />
 	</Lights>
 
 	<Geometry>
-	<!--
-	<Cylinder radius="1" height="2" capped="false" name="cylinder" />
-	<Plane edge1="0 0 16" edge2="16 0 0" name="plane"/>
-	<Plane edge1="0 0  8" edge2=" 8 0 0" name="smallplane" />
-	<Mesh src="triceratops.obj" name="triceratops" />
 	<Mesh src="teapot.obj" name="teapot" />
-	-->
-	<Sphere radius="1" name="sphere" />
+	<Plane edge1="0 0  8" edge2=" 8 0 0" name="smallplane" />
 	</Geometry>
 
 	<Materials>
@@ -42,34 +35,34 @@
 	<Material diffuse_color="0.88 0.44 0.22" specular_color="1 1 1"
 			specular_exponent="400" name="redplastic" />
 	<Material diffuse_color="0.22 0.88 0.44" specular_color="1 1 1"
-			specular_exponent="400" reflect="0.3" name="greenplastic" />
+			specular_exponent="400" reflect="0.0" glossiness="0.0" name="greenplastic" />
 	<Material diffuse_color="0.44 0.22 0.88" specular_color="1 1 1"
 			specular_exponent="400" name="blueplastic" />
 	</Materials>
 
-	<Scene camera="cam0" lights="arealight,camlight" background="0.3 0.3 0.3"
-			cubemap="cubemap/deadmeat_skymorning">
+	<Scene camera="cam0" lights="light0,light1" background="0.3 0.3 0.3">
 	<Translate vector="0 0 0">
 
-		<!--
-		<Translate vector="2.4 2 2.4">
-			<Rotate axis="1 0 0" angle="90">
-			<Shape geometry="cylinder" material="redplastic" />
-			</Rotate>
+		<Translate vector="2.4 0 2.4">
+			<Scale scale="0.4 1.3 0.4">
+			<Shape geometry="teapot" material="redplastic" />
+			</Scale>
 		</Translate>
+
 		<Translate vector=" 0  0  0">
 			<Shape geometry="teapot" material="greenplastic" />
 		</Translate>
+
 		<Translate vector="-2  1  2">
-			<Shape geometry="sphere" material="blueplastic" />
+			<Rotate axis="1 1 1" angle="78">
+			<Scale scale="0.4 0.4 0.4">
+				<Shape geometry="teapot" material="blueplastic" />
+			</Scale>
+			</Rotate>
 		</Translate>
 
 		<Translate vector="-4 0 -4">
 			<Shape geometry="smallplane" material="greyplastic" />
-		</Translate>
-		-->
-		<Translate vector="0 0 2">
-			<Shape geometry="sphere" material="greenplastic" />
 		</Translate>
 
 	</Translate>

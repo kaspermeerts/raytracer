@@ -1,0 +1,42 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE Sdl SYSTEM "sdl.dtd">
+
+<Sdl>
+   <Config
+		width =  "512"
+		height = "512"
+		antialiasing = "false"
+		aa_samples = "4"
+		shadow_samples = "1"
+		max_reflections = "2"
+	/>
+
+   <Cameras>
+      <Camera position="4 5 4" direction="-4 -4 -4" up="0 1 0" fovy="45"
+	  		name="cam0" />
+      <Camera position="10 0 0" direction="-1 0 0" up="0 1 0" fovy="70"
+	  		name="cam1" />
+   </Cameras>
+
+   <Lights>
+      <PointLight position="-2 4 5" intensity="1" color="1 1 1" name="light0" />
+	  <PointLight position="0 5 0" intensity="1" color="1 1 0" name="light1" />
+   </Lights>
+
+   <Geometry>
+	   <Mesh src="teapot.obj" name="teapot" />
+   </Geometry>
+
+   <Materials>
+	  <Material diffuse_color="0.75 0.75 1" specular_color="1 1 1"
+	  		specular_exponent="50" reflect="0.0" name="mat0" />
+   </Materials>
+
+	<Scene camera="cam0" lights="light0" background="0.3 0.3 0.3" >
+		<Rotate axis="0 1 0" angle="0" >
+				<Shape geometry="teapot" material="mat0" />
+		</Rotate>
+	</Scene>
+</Sdl>
+<!-- vim: ft=xml
+-->

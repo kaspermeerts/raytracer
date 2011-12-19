@@ -1,0 +1,62 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE Sdl SYSTEM "sdl.dtd">
+
+<Sdl>
+	<Config
+		width =  "1024"
+		height = "512"
+		antialiasing = "true"
+		aa_samples = "4"
+		shadow_samples = "4"
+		max_reflections = "5"
+		reflection_samples = "10"
+	/>
+
+	<Cameras>
+	<Camera position="0 4.5 8" direction="0 -4 -8" up="0 1 0" fovy="90" 
+	name="cam0" />
+	</Cameras>
+
+	<Lights>
+	<AreaLight position="-5 +5 4" edge1="1 0 0" edge2="0 0 1" color="1 0 0" name="redlight" />
+	<AreaLight position="-0 +5 4" edge1="1 0 0" edge2="0 0 1" color="0 1 0" name="greenlight" />
+	<AreaLight position="+5 +5 4" edge1="1 0 0" edge2="0 0 0" color="0 0 1" name="bluelight" />
+	</Lights>
+
+	<Geometry>
+	<Mesh src="teapot.obj" name="teapot" />
+	<Sphere radius="1" name="sphere" />
+	<Cylinder radius="1" height="3" capped="true" name="cylinder" />
+	<Cone radius="1" height="1" name="cone" />
+	<Disk radius="40" name="disk" />
+	</Geometry>
+
+	<Materials>
+	<Material diffuse_color="1 1 1" specular_color="1 1 1"
+			specular_exponent="400" name="whiteplastic" />
+	<Material diffuse_color="1 0.74 0.77" specular_color="1 1 1"
+			specular_exponent="400" name="pinkplastic" />
+	<Material diffuse_color="0.88 0.44 0.22" specular_color="1 1 1"
+			specular_exponent="400" name="redplastic" />
+	<Material diffuse_color="0.22 0.88 0.44" specular_color="1 1 1"
+			specular_exponent="400" reflect="0.0" glossiness="0.0" name="greenplastic" />
+	<Material diffuse_color="0.44 0.22 0.88" specular_color="1 1 1"
+			specular_exponent="400" name="blueplastic" />
+	</Materials>
+
+	<Scene camera="cam0" lights="redlight,greenlight,bluelight" background="0.3 0.3 0.3">
+	<Translate vector="0 0 0">
+
+		<Translate vector=" 0  0 0">
+			<Shape geometry="teapot" material="greenplastic" />
+		</Translate>
+
+
+		<Translate vector="0 0 -4">
+		<Shape geometry="disk" material="whiteplastic" />
+		</Translate>
+	</Translate>
+	</Scene>
+</Sdl>
+<!-- vim: ft=xml
+-->
